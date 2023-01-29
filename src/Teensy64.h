@@ -39,6 +39,10 @@
 #include <DMAChannel.h>
 #include "settings.h"
 
+#ifdef VERSION
+#undef VERSION
+#endif
+
 #define VERSION "09"
 #define NTSC (!PAL)
 #define USBHOST (!PS2KEYBOARD)

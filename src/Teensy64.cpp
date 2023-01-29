@@ -58,7 +58,7 @@ AudioOutputAnalog   audioout; //xy=476,333
 AudioConnection     patchCord1(playSID, 0 , audioout, 0);
 
 
-SdFatSdio SD;
+SdFat SD;
 uint8_t SDinitialized = 0;
 
 

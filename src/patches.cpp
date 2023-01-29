@@ -39,8 +39,8 @@
 //#define DIRECTORY "/C64/TESTS/\0"
 
 extern uint8_t SDinitialized;
-static File file;
-static File entry;
+static FsFile file;
+static FsFile entry;
 static char filename[64];
 static char buffer[2];
 

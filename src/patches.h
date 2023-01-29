@@ -39,7 +39,7 @@
 #include "cpu.h"
 #include "roms.h"
 
-extern SdFatSdio SD;
+extern SdFat SD;
 
 void patchLOAD(void);
 void patchSAVE(void);
