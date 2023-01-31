@@ -55,7 +55,6 @@ typedef uint8_t tpixel ;
 #define SCREENMEM VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET
 
 #else
-#include "ili9341_t64.h"
 #define TFT_HEIGHT  	240
 #define TFT_WIDTH   	320
 #define BORDER      	20
@@ -69,8 +68,6 @@ typedef uint8_t tpixel ;
 #define BORDER_RIGHT    0
 
 typedef uint16_t tpixel;
-extern uint16_t screen[TFT_HEIGHT][TFT_WIDTH];
-#define SCREENMEM (uint16_t*)&screen
 
 #endif
 
@@ -108,7 +105,7 @@ struct tvic {
   uint8_t * bitmapPtr;
   uint16_t videomatrix;
 
-  uint16_t colors[15]; // translated ([palette]) colors
+  uint16_t colors[15]; // translated ([palette]) colors. Only the first four entries are used.
   uint16_t palette[16];
 
   MyIntervalTimer lineClock;

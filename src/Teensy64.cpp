@@ -47,14 +47,15 @@ uVGA uvga;
 uint8_t * VGA_frame_buffer = uvga_fb;
 
 #else
-ILI9341_t3DMA tft = ILI9341_t3DMA(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
+ILI9341_t3n tft = ILI9341_t3n(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
+extern uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
 #endif
 
 #include "vic_palette.h"
 
+AudioPlaySID        playSID;
+AudioOutputAnalog   audioout;
 
-AudioPlaySID        playSID;  //xy=105,306
-AudioOutputAnalog   audioout; //xy=476,333
 AudioConnection     patchCord1(playSID, 0 , audioout, 0);
 
 
@@ -256,11 +257,6 @@ void initMachine() {
   pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
   digitalWriteFast(PIN_RESET, 1);
 
-#if !VGA
-  pinMode(TFT_TOUCH_CS, OUTPUT);
-  digitalWriteFast(TFT_TOUCH_CS, 1);
-#endif
-
   LED_INIT;
   LED_ON;
   disableEventResponder();
@@ -280,13 +276,16 @@ void initMachine() {
 
 #else
 
-  tft.begin();
-  tft.writeScreen((uint16_t*)logo_320x240);
-  tft.refresh();
-
+  tft.begin(144000000);
+  tft.setRotation(3);
+  tft.setFrameBuffer(&screen[0][0]);
+  tft.useFrameBuffer(true);
+  tft.updateScreenAsync(true);
+  memcpy(&screen[0][0], (uint16_t*)logo_320x240, sizeof(screen));
 #endif
 
-  SDinitialized = SD.begin();
+  SDinitialized = SD.begin(BUILTIN_SDCARD);
+
   float audioSampleFreq;
 
 #if !VGA
@@ -320,7 +319,11 @@ void initMachine() {
   Serial.print((int)(F_BUS / 1e6));
   Serial.println();
   Serial.print("Display: ");
-  Serial.println((VGA>0) ? "VGA":"TFT");
+  #ifdef VGA
+  Serial.println("VGA");
+  #else
+  Serial.println("TFT");
+  #endif
   Serial.println();
 
   Serial.print("Emulated video: ");
@@ -355,7 +358,10 @@ void initMachine() {
     ;
   }
 
+#if VGA
   add_uVGAhsync();
+#endif
+
   setupGPIO_DMA();
 
   Serial.println("Starting.\n");
@@ -371,7 +377,6 @@ void initMachine() {
   attachInterrupt(digitalPinToInterrupt(PIN_RESET), resetMachine, RISING);
 
   listInterrupts();
-
 }
 
 

@@ -57,6 +57,13 @@
 #define MAXCYCLESSPRITES3_7        5
 #define MAXCYCLESSPRITES    (MAXCYCLESSPRITES0_2 + MAXCYCLESSPRITES3_7)
 
+DMAMEM uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
+
+#if VGA
+uint16_t * const SCREENMEM = VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET;
+#else
+uint16_t * const SCREENMEM = &screen[0][0];
+#endif
 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
@@ -532,7 +539,7 @@ void mode2 (tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
           /*
              Sprite-Prioritäten (Anzeige)
              MDP = 1: Grafikhintergrund, Sprite, Vordergrund
-             MDP = 0: Grafikhintergung, Vordergrund, Sprite
+             MDP = 0: Grafikhintergrund, Vordergrund, Sprite
 
              Kollision:
              Eine Kollision zwischen Sprites und anderen Grafikdaten wird erkannt,
@@ -1254,7 +1261,6 @@ const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7
 
 
 void vic_do(void) {
-
   uint16_t vc;
   uint16_t xscroll;
   tpixel *pe;
@@ -1551,9 +1557,9 @@ g-Zugriff
 */ 
 	//Modes 1 & 3
     if (mode == 1 || mode == 3) {
-		modes[mode](p, pe, spl, vc);
+        modes[mode](p, pe, spl, vc);
     } else {//TODO: all other modes
-	fastFillLine(p, pe, cpu.vic.palette[0], spl);
+        fastFillLine(p, pe, cpu.vic.palette[0], spl);
 	}
   }
 
@@ -1567,7 +1573,7 @@ g-Zugriff
 
   if (cpu.vic.fgcollision) {
     if (cpu.vic.MD == 0) {
-      cpu.vic.R[0x19] |= 2 | ( (cpu.vic.R[0x1a] & 2) << 6);
+        cpu.vic.R[0x19] |= 2 | ( (cpu.vic.R[0x1a] & 2) << 6);
     }
     cpu.vic.MD |= cpu.vic.fgcollision;
   }
@@ -1897,9 +1903,26 @@ void fastFillLine(tpixel * p, const tpixel * pe, const uint16_t col, uint16_t * 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
+void dim()
+{
+    int p;
+	uint8_t r, g, b;
+
+    Serial.println("dim");
+
+	for (int x = 0; x < ILI9341_TFTWIDTH; x++) {
+		for (int y = 0; y < ILI9341_TFTHEIGHT; y++) {
+			p = tft.readPixel(x,y);
+			ILI9341_t3n::color565toRGB(p, r,g,b);			
+			tft.drawPixel(x,y, ILI9341_t3n::color565(r>>2, g>>2, b>>2));
+		}
+	}
+	
+}
+
 void vic_displaySimpleModeScreen(void) {
 #if !VGA
-	tft.dim();
+	// dim();
 
 	tft.setFont(Play_60_Bold);
 	tft.setTextColor(0xffff);
@@ -1909,7 +1932,6 @@ void vic_displaySimpleModeScreen(void) {
 	tft.print("Access");
 #endif
 }
-
 
 void vic_do_simple(void) {
   uint16_t vc;

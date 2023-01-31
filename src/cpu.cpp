@@ -44,7 +44,7 @@
  *                                                   *
  *****************************************************
 */
-
+#include "Teensy64.h"
 #include "cpu.h"
 
 #define FLAG_CARRY     0x01
@@ -2648,8 +2648,7 @@ void cia_clockt(int ticks) {
 }
 
 void cpu_clock(int cycles) {
-static int c = 0;
-static int writeCycles = 0;
+    static int c = 0;
 	cpu.lineCyclesAbs += cycles;
     c+=cycles;
 	while (c > 0) {
@@ -2674,7 +2673,6 @@ static int writeCycles = 0;
 			cpu.cpustatus |= FLAG_CONSTANT;
 			opcode = read6502(cpu.pc++);
 			opcodetable[opcode]();
-			writeCycles = writeCycleTable[opcode];
 noOpcode:
 
 			cia_clockt(cpu.ticks);
@@ -2698,7 +2696,6 @@ void cpu_setExactTiming() {
 		LED_ON;
 		setAudioOff();
 		vic_displaySimpleModeScreen();
-
 	}
 	cpu.exactTiming = 1;
 	cpu.exactTimingStartTime = ARM_DWT_CYCCNT;

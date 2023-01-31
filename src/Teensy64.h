@@ -52,19 +52,19 @@
 #include <uVGA.h>
 extern uint8_t * VGA_frame_buffer;
 extern uVGA uvga;
-#else
+#else //VGA
 
 #include "logo.h"
-#include "ili9341_t64.h"
-extern ILI9341_t3DMA tft;
-//#include <XPT2046_Touchscreen.h> //Not used
-#endif
+#include "ILI9341_t3n.h"
+extern ILI9341_t3n tft;
+
+#endif //VGA
 
 
 #if USBHOST
 #include "keyboard_usb.h"
 extern USBHost myusb;
-#endif
+#endif // USBHOST
 
 #if VGA && USBHOST
 #define USBHS_ASYNC_ON {\
@@ -76,10 +76,10 @@ extern USBHost myusb;
 		USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);\
 		Serial.println("USBHS: Async OFF.");\
 }		
-#else
+#else // VGA && USBHOS
 #define USBHS_ASYNC_ON
 #define USBHS_ASYNC_OFF
-#endif
+#endif // VGA && USBHOS
 
 void initMachine();
 void resetMachine() __attribute__ ((noreturn));
@@ -97,14 +97,14 @@ extern uint8_t SDinitialized;
 #define VBLANK_FIRST    300
 #define VBLANK_LAST     15
 
-#else
+#else // PAL == 1
 #define CRYSTAL       	14318180.0f
 #define CLOCKSPEED      ( CRYSTAL / 14.0f) // 1022727,14 Hz
 #define CYCLESPERRASTERLINE 64
 #define LINECNT       	263 //Rasterlines
 #define VBLANK_FIRST    13
 #define VBLANK_LAST     40
-#endif
+#endif // PAL == 1
 
 #define LINEFREQ      			(CLOCKSPEED / CYCLESPERRASTERLINE) //Hz
 #define REFRESHRATE       		(LINEFREQ / LINECNT) //Hz
@@ -131,7 +131,7 @@ extern uint8_t SDinitialized;
 #define PIN_PS2DATA 27
 #define PIN_PS2INT  24
 
-#endif
+#endif // PS2KEYBOARD
 
 #if VGA
 #define UVGA_240M_452X300
@@ -183,19 +183,16 @@ extern uint8_t SDinitialized;
 #define PIN_JOY2_A1     A13
 #define PIN_JOY2_A2     A20
 
-#else //ILI9341
+#else // VGA
 
-#define SCK       14
-#define MISO      39
-#define MOSI      28
-#define TFT_TOUCH_CS    38
-#define TFT_TOUCH_INT   37
+//ILI9341
+
 #define TFT_DC          20
 #define TFT_CS          21
 #define TFT_RST         255  // 255 = unused, connected to 3.3V
-#define TFT_SCLK        SCK
-#define TFT_MOSI        MOSI
-#define TFT_MISO        MISO
+#define TFT_SCLK        14
+#define TFT_MOSI        28
+#define TFT_MISO        39
 
 #define PIN_RESET       25 //PTA5
 #define PIN_SERIAL_ATN   4 //PTA13
@@ -213,14 +210,14 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
   ((digitalReadFast(PIN_SERIAL_CLK) << 6) | \
    (digitalReadFast(PIN_SERIAL_DATA) << 7))
 
-#else
+#else // 0
 #define WRITE_ATN_CLK_DATA(value) { \
     GPIOA_PCOR = ((value >> 3) & 0x07) << 13; \
     GPIOA_PSOR = ((~value >> 3) & 0x07) << 13;\
   }
 #define READ_CLK_DATA() \
   (((GPIOA_PDIR >> 14) & 0x03) << 6)
-#endif
+#endif // 0
 
 #define PIN_JOY1_BTN     5 //PTD7
 #define PIN_JOY1_1       2 //PTD0 up
@@ -238,10 +235,11 @@ digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
 #define PIN_JOY2_A1     A14
 #define PIN_JOY2_A2     A15
 
-#endif
+#endif // VGA
 
 #include <SdFat.h>
 #include "output_dac.h"
 #include <reSID.h>
 #include "cpu.h"
-#endif
+
+#endif // Teensy64_h_

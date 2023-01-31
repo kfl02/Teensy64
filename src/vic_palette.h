@@ -33,6 +33,8 @@
 
 */
 
+#include <cstdint>
+
 /* choose your "display"-type */
 
 #if 1 // color display (default)

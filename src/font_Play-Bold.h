@@ -1,7 +1,7 @@
 #ifndef _ILI9341_t3_font_PlayBold
 #define _ILI9341_t3_font_PlayBold
 
-#include "ili9341_t64.h"
+#include "ILI9341_fonts.h"
 
 #ifdef __cplusplus
 extern "C" {
