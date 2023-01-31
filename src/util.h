@@ -47,11 +47,17 @@ inline unsigned fbmicros(void)  __attribute__((always_inline));
 inline unsigned fbnanos(void) __attribute__((always_inline));
 
 
-unsigned fbmillis(void) { return (ARM_DWT_CYCCNT * (1000.0 / F_CPU)); }
+unsigned fbmillis(void) {
+    return (ARM_DWT_CYCCNT * (1000.0 / F_CPU));
+}
 
-unsigned fbmicros(void) { return (ARM_DWT_CYCCNT * (1000000.0 / F_CPU)); }
+unsigned fbmicros(void) {
+    return (ARM_DWT_CYCCNT * (1000000.0 / F_CPU));
+}
 
-unsigned fbnanos(void) { return (ARM_DWT_CYCCNT * (1000000000.0 / F_CPU)); }
+unsigned fbnanos(void) {
+    return (ARM_DWT_CYCCNT * (1000000000.0 / F_CPU));
+}
 
 float setAudioSampleFreq(float freq);
 void setAudioOff(void);

@@ -62,14 +62,14 @@ public:
     }
 
     bool begin(void (*funct)(), unsigned int microseconds) {
-        if(microseconds == 0 || microseconds > MAX_PERIOD) return false;
+        if(microseconds == 0 || microseconds > MAX_PERIOD) { return false; }
         uint32_t cycles = (F_BUS / 1000000) * microseconds - 1;
-        if(cycles < 36) return false;
+        if(cycles < 36) { return false; }
         return beginCycles(funct, cycles);
     }
 
     bool begin(void (*funct)(), int microseconds) {
-        if(microseconds < 0) return false;
+        if(microseconds < 0) { return false; }
         return begin(funct, (unsigned int) microseconds);
     }
 
@@ -82,9 +82,9 @@ public:
     }
 
     bool begin(void (*funct)(), float microseconds) {
-        if(microseconds <= 0 || microseconds > MAX_PERIOD) return false;
+        if(microseconds <= 0 || microseconds > MAX_PERIOD) { return false; }
         uint32_t cycles = (float) (F_BUS / 1000000) * microseconds - 0.5;
-        if(cycles < 36) return false;
+        if(cycles < 36) { return false; }
         return beginCycles(funct, cycles);
     }
 
@@ -98,8 +98,8 @@ public:
     }
 
     bool setInterval(float microseconds) { /*NEW*/
-        if(!channel) return false;
-        if(microseconds <= 0 || microseconds > MAX_PERIOD) return false;
+        if(!channel) { return false; }
+        if(microseconds <= 0 || microseconds > MAX_PERIOD) { return false; }
         setIntervalFast(microseconds);
         return true;
     }

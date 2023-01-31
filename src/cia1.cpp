@@ -46,7 +46,8 @@
 
 void cia1_setAlarmTime() {
     cpu.cia1.TODAlarm = (cpu.cia1.W[0x08] + cpu.cia1.W[0x09] * 10l + cpu.cia1.W[0x0A] * 600l +
-                         cpu.cia1.W[0x0B] * 36000l);
+                         cpu.cia1.W[0x0B] * 36000l
+    );
 }
 
 void cia1_write(uint32_t address, uint8_t value) {
@@ -60,7 +61,7 @@ void cia1_write(uint32_t address, uint8_t value) {
             break; //Timer A LO
         case 0x05 : {
             cpu.cia1.W[address] = value;
-            if((cpu.cia1.R[0x0E] & 0x01) == 0) cpu.cia1.R[address] = value;
+            if((cpu.cia1.R[0x0E] & 0x01) == 0) {cpu.cia1.R[address] = value; }
         };
             break;//Timer A HI
         case 0x06 : {
@@ -69,7 +70,7 @@ void cia1_write(uint32_t address, uint8_t value) {
             break; //Timer B LO
         case 0x07 : {
             cpu.cia1.W[address] = value;
-            if((cpu.cia1.R[0x0F] & 0x01) == 0) cpu.cia1.R[address] = value;
+            if((cpu.cia1.R[0x0F] & 0x01) == 0) { cpu.cia1.R[address] = value; }
         };
             break; //Timer B HI
 
@@ -90,7 +91,8 @@ void cia1_write(uint32_t address, uint8_t value) {
                 //Translate set Time to TOD:
                 cpu.cia1.TOD = (int) (millis() % 86400000l) -
                                (value * 100 + cpu.cia1.R[0x09] * 1000l + cpu.cia1.R[0x0A] * 60000l +
-                                cpu.cia1.R[0x0B] * 3600000l);
+                                cpu.cia1.R[0x0B] * 3600000l
+                               );
 #if RTCDEBUG
                 Serial.print("CIA 1 Set TENTH:");
                 Serial.println(value,HEX);
@@ -247,10 +249,11 @@ uint8_t cia1_read(uint32_t address) {
             Serial.println(cpu.cia1.TODfrozenMillis);
 #endif
             ret = cpu.cia1.TODfrozenMillis / (1000 * 3600) % 24;
-            if(ret >= 12)
+            if(ret >= 12) {
                 ret = 128 | decToBcd(ret - 12);
-            else
+            } else {
                 ret = decToBcd(ret);
+            }
         };
 #if RTCDEBUG
             Serial.print("CIA 1 Read HRS:");
@@ -351,7 +354,7 @@ void cia1_clock(int clk) {
         if(clk > t) { //underflow ?
             t = cpu.cia1.W16[0x04 / 2] - (clk - t);
             regFEDC |= 0x00000100;
-            if((regFEDC & 0x00080000)) regFEDC &= 0xfffeffff; //One-Shot
+            if((regFEDC & 0x00080000)) { regFEDC &= 0xfffeffff; } //One-Shot
         } else {
             t -= clk;
         }
@@ -366,10 +369,11 @@ void cia1_clock(int clk) {
         //uint16_t quelle = (cpu.cia1.R[0x0F]>>5) & 0x03;
         if((regFEDC & 0x60000000) == 0x40000000) {
 
-            if(regFEDC & 0x00000100) //unterlauf TimerA?
+            if(regFEDC & 0x00000100) { //unterlauf TimerA?
                 clk = 1;
-            else
+            } else {
                 goto tend;
+            }
         }
 
         t = cpu.cia1.R16[0x06 / 2];
@@ -377,7 +381,7 @@ void cia1_clock(int clk) {
         if(clk > t) { //underflow ?
             t = cpu.cia1.W16[0x06 / 2] - (clk - t);
             regFEDC |= 0x00000200;
-            if((regFEDC & 0x08000000)) regFEDC &= 0xfeffffff;
+            if((regFEDC & 0x08000000)) { regFEDC &= 0xfeffffff; }
         } else {
             t -= clk;
         }
@@ -392,7 +396,7 @@ void cia1_clock(int clk) {
     if(regFEDC & cpu.cia1.W32[0x0C / 4] & 0x0f00) {
         regFEDC |= 0x8000;
         cpu.cia1.R32[0x0C / 4] = regFEDC;
-    } else cpu.cia1.R32[0x0C / 4] = regFEDC;
+    } else { cpu.cia1.R32[0x0C / 4] = regFEDC; }
 }
 
 #endif

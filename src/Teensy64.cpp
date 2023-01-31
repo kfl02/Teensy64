@@ -99,7 +99,7 @@ void oneRasterLine(void) {
         }
 
         //Switch "ExactTiming" Mode off after a while:
-        if(!cpu.exactTiming) break;
+        if(!cpu.exactTiming) { break; }
         if(ARM_DWT_CYCCNT - cpu.exactTimingStartTime >= EXACTTIMINGDURATION * (F_CPU / 1000)) {
             cpu_disableExactTiming();
             break;
@@ -376,7 +376,7 @@ void initMachine() {
 void yield(void) {
 
     static volatile uint8_t running = 0;
-    if(running) return;
+    if(running) { return; }
     running = 1;
 
     //Input via terminal to keyboardbuffer (for BASIC only)

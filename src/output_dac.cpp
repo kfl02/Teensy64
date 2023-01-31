@@ -195,5 +195,5 @@ void AudioOutputAnalog::isr(void) {
             *dest++ = 2048;
         } while(dest < end);
     }
-    if(AudioOutputAnalog::update_responsibility) AudioStream::update_all();
+    if(AudioOutputAnalog::update_responsibility) { AudioStream::update_all(); }
 }

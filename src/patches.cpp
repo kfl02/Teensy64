@@ -129,7 +129,7 @@ void patchLOAD(void) {
                 //strcpy((char * )&cpu.RAM[addr], entry.name());
                 len = strlen((char *) &cpu.RAM[addr]);
 
-                if(len > 16) len = 16;
+                if(len > 16) { len = 16; }
                 addr += len;
                 cpu.RAM[addr++] = '"';
 
@@ -279,7 +279,7 @@ void patchSAVE(void) {
     buffer[0] = addr & 0xff;
     buffer[1] = addr >> 8;
 
-    if(SD.exists(filename)) SD.remove(filename);
+    if(SD.exists(filename)) { SD.remove(filename); }
     file = SD.open(filename, FILE_WRITE);
     if(!file) {
         Serial.println("not possible.");

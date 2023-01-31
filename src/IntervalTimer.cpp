@@ -62,33 +62,46 @@ bool MyIntervalTimer::beginCycles(void (*funct)(), uint32_t cycles) {
         channel->TFLG = 1;
     } else {
         SIM_SCGC6 |= SIM_SCGC6_PIT;
+
         __asm__ volatile("nop"); // solves timing problem on Teensy 3.5
+
         PIT_MCR = 1;
         channel = KINETISK_PIT_CHANNELS;
+
         while(1) {
-            if(channel->TCTRL == 0) break;
+            if(channel->TCTRL == 0) {
+                break;
+            }
+
             if(++channel >= KINETISK_PIT_CHANNELS + NUM_CHANNELS) {
                 channel = NULL;
+
                 return false;
             }
         }
     }
+
     int index = channel - KINETISK_PIT_CHANNELS;
+
     funct_table[index] = funct;
     channel->LDVAL = cycles;
     channel->TCTRL = 3;
+
 #if defined(KINETISK)
     NVIC_SET_PRIORITY(IRQ_PIT_CH0 + index, nvic_priority);
     NVIC_ENABLE_IRQ(IRQ_PIT_CH0 + index);
 #elif defined(KINETISL)
     nvic_priorites[index] = nvic_priority;
+
     if (nvic_priorites[0] <= nvic_priorites[1]) {
         NVIC_SET_PRIORITY(IRQ_PIT, nvic_priorites[0]);
     } else {
         NVIC_SET_PRIORITY(IRQ_PIT, nvic_priorites[1]);
     }
+
     NVIC_ENABLE_IRQ(IRQ_PIT);
 #endif
+
     return true;
 }
 
@@ -96,11 +109,14 @@ bool MyIntervalTimer::beginCycles(void (*funct)(), uint32_t cycles) {
 void MyIntervalTimer::end() {
     if(channel) {
         int index = channel - KINETISK_PIT_CHANNELS;
+
         NVIC_DISABLE_IRQ(IRQ_PIT_CH0 + index);
+
         funct_table[index] = dummy_funct;
         channel->TCTRL = 0;
 #if defined(KINETISL)
         nvic_priorites[index] = 255;
+
         if (nvic_priorites[0] <= nvic_priorites[1]) {
             NVIC_SET_PRIORITY(IRQ_PIT, nvic_priorites[0]);
         } else {
@@ -140,6 +156,7 @@ void pit_isr() {
         PIT_TFLG0 = 1;
         funct_table[0]();
     }
+
     if (PIT_TFLG1) {
         PIT_TFLG1 = 1;
         funct_table[1]();

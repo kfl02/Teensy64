@@ -33,7 +33,9 @@
 
 class AudioOutputAnalog : public AudioStream {
 public:
-    AudioOutputAnalog(void) : AudioStream(1, inputQueueArray) { begin(); }
+    AudioOutputAnalog(void) : AudioStream(1, inputQueueArray) {
+        begin();
+    }
 
     virtual void update(void);
 

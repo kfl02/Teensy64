@@ -44,9 +44,12 @@ void enableCycleCounter(void) {
 
 extern "C" volatile uint32_t systick_millis_count;
 
-void mySystick_isr(void) { systick_millis_count++; }
+void mySystick_isr(void) {
+    systick_millis_count++;
+}
 
-void myUnused_isr(void) {};
+void myUnused_isr(void) {
+};
 
 void disableEventResponder(void) {
     _VectorsRam[14] = myUnused_isr;  // pendablesrvreq
@@ -57,7 +60,7 @@ void disableEventResponder(void) {
 
 static float setDACFreq(float freq) {
 
-    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return 0; }
 
     unsigned int t = (float) F_BUS / freq - 0.5f;
     PDB0_SC = 0;
@@ -78,7 +81,7 @@ float setAudioSampleFreq(float freq) {
 
 void setAudioOff(void) {
 #if !VGA
-    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return; }
     PDB0_SC = 0;
 #endif
     AudioNoInterrupts();
@@ -88,7 +91,7 @@ void setAudioOff(void) {
 
 void setAudioOn(void) {
 #if !VGA
-    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return; }
     PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
     PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
 #endif
@@ -151,10 +154,10 @@ void listInterrupts() {
             Serial.print(NVIC_GET_PRIORITY(i));
             Serial.print("\t0x");
             Serial.print(adr, HEX);
-            if(adr < 0x10000000) Serial.print("\t");
+            if(adr < 0x10000000) { Serial.print("\t"); }
             Serial.print("\t");
             Serial.print(isrName[i + 16]);
-            if(NVIC_IS_ENABLED(i)) Serial.print("\t is enabled");
+            if(NVIC_IS_ENABLED(i)) { Serial.print("\t is enabled"); }
             Serial.println();
         }
     }

@@ -45,26 +45,52 @@
 extern CONSTROM rarray_t PLA_READ[8];
 extern CONSTROM warray_t PLA_WRITE[8];
 
-uint8_t r_ram(uint32_t address) { return cpu.RAM[address]; }
+uint8_t r_ram(uint32_t address) {
+    return cpu.RAM[address];
+}
 
-uint8_t r_bas(uint32_t address) { return rom_basic[address & (sizeof(rom_basic) - 1)]; } //BASIC ROM
-uint8_t r_ker(uint32_t address) { return rom_kernal[address & (sizeof(rom_kernal) - 1)]; } //KERNAL ROM
-uint8_t r_chr(uint32_t address) { return rom_characters[address & (sizeof(rom_characters) - 1)]; } //CHARACTER ROM
-uint8_t r_vic(uint32_t address) { return vic_read(address); }
+uint8_t r_bas(uint32_t address) {
+    return rom_basic[address & (sizeof(rom_basic) - 1)];
+} //BASIC ROM
+uint8_t r_ker(uint32_t address) {
+    return rom_kernal[address & (sizeof(rom_kernal) - 1)];
+} //KERNAL ROM
+uint8_t r_chr(uint32_t address) {
+    return rom_characters[address & (sizeof(rom_characters) - 1)];
+} //CHARACTER ROM
+uint8_t r_vic(uint32_t address) {
+    return vic_read(address);
+}
 
-uint8_t r_sid(uint32_t address) { return playSID.getreg(address & 0x1F); }
+uint8_t r_sid(uint32_t address) {
+    return playSID.getreg(address & 0x1F);
+}
 
-uint8_t r_col(uint32_t address) { return cpu.vic.COLORRAM[address & 0x3FF]; }
+uint8_t r_col(uint32_t address) {
+    return cpu.vic.COLORRAM[address & 0x3FF];
+}
 
-uint8_t r_cia1(uint32_t address) { return cia1_read(address); }
+uint8_t r_cia1(uint32_t address) {
+    return cia1_read(address);
+}
 
-uint8_t r_cia2(uint32_t address) { return cia2_read(address); }
+uint8_t r_cia2(uint32_t address) {
+    return cia2_read(address);
+}
 
-uint8_t r_crtL(uint32_t address) { return cpu.cartrigeLO[address & 0x1fff]; } //Cartrige Low ($8000)
-uint8_t r_crtH(uint32_t address) { return cpu.cartrigeHI[address & 0x1fff]; }
+uint8_t r_crtL(uint32_t address) {
+    return cpu.cartrigeLO[address & 0x1fff];
+} //Cartrige Low ($8000)
+uint8_t r_crtH(uint32_t address) {
+    return cpu.cartrigeHI[address & 0x1fff];
+}
 
-uint8_t r_nul(uint32_t address) { return 0; } //No RAM for Ultimax-cartrige
-uint8_t r_rnd(uint32_t address) { return 255; } //Random for $DE00-$DFFF
+uint8_t r_nul(uint32_t address) {
+    return 0;
+} //No RAM for Ultimax-cartrige
+uint8_t r_rnd(uint32_t address) {
+    return 255;
+} //Random for $DE00-$DFFF
 
 void w_ram(uint32_t address, uint8_t value) {
     cpu.RAM[address] = value;
@@ -79,15 +105,25 @@ void w_ramz(uint32_t address, uint8_t value) {
     }
 }
 
-void w_vic(uint32_t address, uint8_t value) { vic_write(address, value); }
+void w_vic(uint32_t address, uint8_t value) {
+    vic_write(address, value);
+}
 
-void w_col(uint32_t address, uint8_t value) { cpu.vic.COLORRAM[address & 0x3FF] = value & 0x0F; }
+void w_col(uint32_t address, uint8_t value) {
+    cpu.vic.COLORRAM[address & 0x3FF] = value & 0x0F;
+}
 
-void w_sid(uint32_t address, uint8_t value) { playSID.setreg(address & 0x1F, value); }
+void w_sid(uint32_t address, uint8_t value) {
+    playSID.setreg(address & 0x1F, value);
+}
 
-void w_cia1(uint32_t address, uint8_t value) { cia1_write(address, value); }
+void w_cia1(uint32_t address, uint8_t value) {
+    cia1_write(address, value);
+}
 
-void w_cia2(uint32_t address, uint8_t value) { cia2_write(address, value); }
+void w_cia2(uint32_t address, uint8_t value) {
+    cia2_write(address, value);
+}
 
 /*
     LORAM (bit 0) can generally be thought of as a control line which banks

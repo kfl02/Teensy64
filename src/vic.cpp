@@ -177,7 +177,7 @@ void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = spritepixel;
                         }
                     } else {            // Sprite: Vor Text //MDP = 0
-                        if(chr & 0x80) cpu.vic.fgcollision |= spritenum;
+                        if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; }
                         pixel = spritepixel;
                     }
                 } else {            // Kein Sprite
@@ -220,19 +220,19 @@ void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             x++;
 
             *p++ = (chr & 0x80) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x40) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x20) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x10) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x08) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x04) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x02) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x01) ? fgcol : bgcol;
         };
         PRINTOVERFLOW
@@ -331,7 +331,7 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                                 pixel = colors[3];
                             }
                         } else {            // MDP = 0
-                            if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                            if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                         }
                     } else {            // Kein Sprite
                         pixel = (chr >> 7) ? colors[3] : colors[0];
@@ -344,7 +344,7 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             } else {//Zeichen ist MULTICOLOR
 
                 for(unsigned i = 0; i < 4; i++) {
-                    if(p >= pe) break;
+                    if(p >= pe) { break; }
                     int c = (chr >> 6) & 0x03;
                     chr = chr << 2;
 
@@ -360,13 +360,13 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                                 pixel = colors[c];
                             }
                         } else {          // MDP = 0
-                            if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                            if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                         }
                     } else { // Kein Sprite
                         pixel = colors[c];
                     }
                     *p++ = cpu.vic.palette[pixel];
-                    if(p >= pe) break;
+                    if(p >= pe) { break; }
 
                     sprite = *spl++;
 
@@ -381,7 +381,7 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                                 pixel = colors[c];
                             }
                         } else {          // MDP = 0
-                            if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                            if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                         }
                     } else { // Kein Sprite
                         pixel = colors[c];
@@ -470,41 +470,41 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             if((c & 0x08) == 0) { //Zeichen ist HIRES
                 fgcol = cpu.vic.palette[c & 0x07];
                 *p++ = (chr & 0x80) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x40) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x20) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x10) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x08) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x04) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x02) ? fgcol : bgcol;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = (chr & 0x01) ? fgcol : bgcol;
             } else {//Zeichen ist MULTICOLOR
 
                 colors[3] = cpu.vic.palette[c & 0x07];
                 pixel = colors[(chr >> 6) & 0x03];
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 pixel = colors[(chr >> 4) & 0x03];
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 pixel = colors[(chr >> 2) & 0x03];
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 pixel = colors[(chr) & 0x03];
                 *p++ = pixel;
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 *p++ = pixel;
             }
         };
@@ -587,7 +587,7 @@ void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = fgcol;
                         }
                     } else {            // MDP = 0
-                        if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                        if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                     }
                 } else {            // Kein Sprite
                     pixel = (chr & 0x80) ? fgcol : cpu.vic.B0C;
@@ -630,19 +630,19 @@ void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             x++;
 
             *p++ = (chr & 0x80) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x40) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x20) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x10) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x08) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x04) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x02) ? fgcol : bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = (chr & 0x01) ? fgcol : bgcol;
         };
         PRINTOVERFLOW
@@ -705,7 +705,7 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             x++;
 
             for(unsigned i = 0; i < 4; i++) {
-                if(p >= pe) break;
+                if(p >= pe) { break; }
                 uint32_t c = (chr >> 6) & 0x03;
                 chr = chr << 2;
 
@@ -720,14 +720,14 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = colors[c];
                         }
                     } else {          // MDP = 0
-                        if(c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
+                        if(c & 0x02) { cpu.vic.fgcollision |= spritenum; } //Vordergundpixel ist gesetzt
                     }
                 } else { // Kein Sprite
                     pixel = colors[c];
                 }
 
                 *p++ = cpu.vic.palette[pixel];
-                if(p >= pe) break;
+                if(p >= pe) { break; }
 
                 sprite = *spl++;
 
@@ -741,7 +741,7 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = colors[c];
                         }
                     } else {          // MDP = 0
-                        if(c & 0x02) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
+                        if(c & 0x02) { cpu.vic.fgcollision |= spritenum; } //Vordergundpixel ist gesetzt
                     }
                 } else { // Kein Sprite
                     pixel = colors[c];
@@ -806,22 +806,22 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             x++;
             pixel = colors[(chr >> 6) & 0x03];
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             pixel = colors[(chr >> 4) & 0x03];
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             pixel = colors[(chr >> 2) & 0x03];
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             pixel = colors[chr & 0x03];
             *p++ = pixel;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = pixel;
         };
         PRINTOVERFLOW
@@ -886,9 +886,9 @@ void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spritenum;
                             pixel = fgcol;
-                        } else pixel = bgcol;
+                        } else { pixel = bgcol; }
                     } else {              // Sprite: Vor Text
-                        if(chr & 0x80) cpu.vic.fgcollision |= spritenum;
+                        if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; }
                         pixel = sprite & 0x0f;
                     }
                 } else {                // Kein Sprite
@@ -900,7 +900,7 @@ void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             }
         } while(p < pe);
         PRINTOVERFLOWS
-    } else //Keine Sprites
+    } else { //Keine Sprites
         while(p < pe - 8) {
 
             BADLINE(x);
@@ -919,7 +919,8 @@ void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             *p++ = (chr & 0x04) ? fgcol : bgcol;
             *p++ = (chr & 0x02) ? fgcol : bgcol;
             *p++ = (chr & 0x01) ? fgcol : bgcol;
-        };
+        }
+    };
     while(p < pe) {
 
         BADLINE(x);
@@ -932,19 +933,19 @@ void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         x++;
 
         *p++ = (chr & 0x80) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x40) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x20) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x10) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x08) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x04) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x02) ? fgcol : bgcol;
-        if(p >= pe) break;
+        if(p >= pe) { break; }
         *p++ = (chr & 0x01) ? fgcol : bgcol;
     };
     PRINTOVERFLOW
@@ -1020,7 +1021,7 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                                 pixel = 0;
                             }
                         } else {            // MDP = 0
-                            if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                            if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                         }
                     } else {            // Kein Sprite
                         pixel = 0;
@@ -1033,7 +1034,7 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             } else {//Zeichen ist MULTICOLOR
 
                 for(unsigned i = 0; i < 4; i++) {
-                    if(p >= pe) break;
+                    if(p >= pe) { break; }
 
                     chr = chr << 2;
 
@@ -1050,13 +1051,13 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                                 pixel = 0;
                             }
                         } else {          // MDP = 0
-                            if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                            if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                         }
                     } else { // Kein Sprite
                         pixel = 0;
                     }
                     *p++ = cpu.vic.palette[pixel];
-                    if(p >= pe) break;
+                    if(p >= pe) { break; }
 
                     sprite = *spl;
                     *spl++ = 0;
@@ -1070,7 +1071,7 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                                 pixel = 0;
                             }
                         } else {          // MDP = 0
-                            if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                            if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                         }
                     } else { // Kein Sprite
                         pixel = 0;
@@ -1101,19 +1102,19 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             BADLINE(x);
             x++;
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
         };
         PRINTOVERFLOW
@@ -1179,7 +1180,7 @@ void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = 0;
                         }
                     } else {            // MDP = 0
-                        if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergrundpixel ist gesetzt
+                        if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergrundpixel ist gesetzt
                     }
                 } else {            // Kein Sprite
                     pixel = 0;
@@ -1210,19 +1211,19 @@ void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             BADLINE(x);
             x++;
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
         };
         PRINTOVERFLOW
@@ -1264,7 +1265,7 @@ void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             x++;
 
             for(unsigned i = 0; i < 4; i++) {
-                if(p >= pe) break;
+                if(p >= pe) { break; }
 
                 chr = chr << 2;
 
@@ -1281,14 +1282,14 @@ void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = 0;
                         }
                     } else {          // MDP = 0
-                        if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
+                        if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergundpixel ist gesetzt
                     }
                 } else { // Kein Sprite
                     pixel = 0;
                 }
 
                 *p++ = cpu.vic.palette[pixel];
-                if(p >= pe) break;
+                if(p >= pe) { break; }
 
                 sprite = *spl;
                 *spl++ = 0;
@@ -1303,7 +1304,7 @@ void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
                             pixel = 0;
                         }
                     } else {          // MDP = 0
-                        if(chr & 0x80) cpu.vic.fgcollision |= spritenum; //Vordergundpixel ist gesetzt
+                        if(chr & 0x80) { cpu.vic.fgcollision |= spritenum; } //Vordergundpixel ist gesetzt
                     }
                 } else { // Kein Sprite
                     pixel = 0;
@@ -1334,19 +1335,19 @@ void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             BADLINE(x);
             x++;
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
-            if(p >= pe) break;
+            if(p >= pe) { break; }
             *p++ = bgcol;
         };
         PRINTOVERFLOW
@@ -1394,12 +1395,13 @@ void vic_do(void) {
         cpu.vic.rasterLine = 0;
         cpu.vic.vcbase = 0;
         cpu.vic.denLatch = 0;
-    } else cpu.vic.rasterLine++;
+    } else { cpu.vic.rasterLine++; }
 
     int r = cpu.vic.rasterLine;
 
-    if(r == cpu.vic.intRasterLine)//Set Rasterline-Interrupt
+    if(r == cpu.vic.intRasterLine) {//Set Rasterline-Interrupt
         cpu.vic.R[0x19] |= 1 | ((cpu.vic.R[0x1a] & 1) << 7);
+    }
 
     /*****************************************************************************************************/
     /* Badlines ******************************************************************************************/
@@ -1420,7 +1422,7 @@ void vic_do(void) {
 
     */
 
-    if(r == 0x30) cpu.vic.denLatch |= cpu.vic.DEN;
+    if(r == 0x30) { cpu.vic.denLatch |= cpu.vic.DEN; }
 
     /* 3.7.2
       2. In der ersten Phase von Zyklus 14 jeder Zeile wird VC mit VCBASE geladen
@@ -1442,8 +1444,8 @@ void vic_do(void) {
 #if 1
     {
         int t = MAXCYCLESSPRITES3_7 - cpu.vic.spriteCycles3_7;
-        if(t > 0) cpu_clock(t);
-        if(cpu.vic.spriteCycles3_7 > 0) cia_clockt(cpu.vic.spriteCycles3_7);
+        if(t > 0) { cpu_clock(t); }
+        if(cpu.vic.spriteCycles3_7 > 0) { cia_clockt(cpu.vic.spriteCycles3_7); }
     }
 #endif
 
@@ -1465,17 +1467,18 @@ void vic_do(void) {
 
     if(cpu.vic.borderFlag) {
         int firstLine = (cpu.vic.RSEL) ? 0x33 : 0x37;
-        if((cpu.vic.DEN) && (r == firstLine)) cpu.vic.borderFlag = false;
+        if((cpu.vic.DEN) && (r == firstLine)) { cpu.vic.borderFlag = false; }
     } else {
         int lastLine = (cpu.vic.RSEL) ? 0xfb : 0xf7;
-        if(r == lastLine) cpu.vic.borderFlag = true;
+        if(r == lastLine) { cpu.vic.borderFlag = true; }
     }
 
     if(r < FIRSTDISPLAYLINE || r > LASTDISPLAYLINE) {
-        if(r == 0)
+        if(r == 0) {
             cpu_clock(CYCLESPERRASTERLINE - 10 - 2 - MAXCYCLESSPRITES - 1); // (minus hblank l + r)
-        else
+        } else {
             cpu_clock(CYCLESPERRASTERLINE - 10 - 2 - MAXCYCLESSPRITES);
+        }
         goto noDisplayIncRC;
     }
 
@@ -1789,7 +1792,7 @@ void vic_do(void) {
         short lastSpriteNum = 0;
 
         for(unsigned short i = 0; i < 8; i++) {
-            if(!spriteYCheck) break;
+            if(!spriteYCheck) { break; }
 
             unsigned b = 1 << i;
 
@@ -1804,23 +1807,23 @@ void vic_do(void) {
 
                     //Sprite Cycles
                     if(i < 3) {
-                        if(!lastSpriteNum) cpu.vic.spriteCycles0_2 += 1;
+                        if(!lastSpriteNum) { cpu.vic.spriteCycles0_2 += 1; }
                         cpu.vic.spriteCycles0_2 += 2;
                     } else {
-                        if(!lastSpriteNum) cpu.vic.spriteCycles3_7 += 1;
+                        if(!lastSpriteNum) { cpu.vic.spriteCycles3_7 += 1; }
                         cpu.vic.spriteCycles3_7 += 2;
                     }
                     lastSpriteNum = i;
                     //Sprite Cycles END
 
 
-                    if(r < FIRSTDISPLAYLINE || r > LASTDISPLAYLINE) continue;
+                    if(r < FIRSTDISPLAYLINE || r > LASTDISPLAYLINE) { continue; }
 
                     uint16_t x = (((cpu.vic.R[0x10] >> i) & 1) << 8) | cpu.vic.R[i * 2];
-                    if(x >= SPRITE_MAX_X) continue;
+                    if(x >= SPRITE_MAX_X) { continue; }
 
                     unsigned short lineOfSprite = r - y;
-                    if(R17 & b) lineOfSprite = lineOfSprite / 2; // Y-Expansion
+                    if(R17 & b) { lineOfSprite = lineOfSprite / 2; } // Y-Expansion
                     unsigned short spriteadr =
                             cpu.vic.bank | cpu.RAM[cpu.vic.videomatrix + (1024 - 8) + i] << 6 | (lineOfSprite * 3);
                     unsigned spriteData =
@@ -1921,7 +1924,7 @@ void vic_do(void) {
                             }
                         }
                     }
-                } else lastSpriteNum = 0;
+                } else { lastSpriteNum = 0; }
             }
         }
 
@@ -2048,13 +2051,14 @@ void vic_do_simple(void) {
 
     int r = cpu.vic.rasterLine;
 
-    if(r == cpu.vic.intRasterLine)//Set Rasterline-Interrupt
+    if(r == cpu.vic.intRasterLine) {//Set Rasterline-Interrupt
         cpu.vic.R[0x19] |= 1 | ((cpu.vic.R[0x1a] & 1) << 7);
+    }
 
     cpu_clock(9);
     cycles += 9;
 
-    if(r == 0x30) cpu.vic.denLatch |= cpu.vic.DEN;
+    if(r == 0x30) { cpu.vic.denLatch |= cpu.vic.DEN; }
 
     vc = cpu.vic.vcbase;
 
@@ -2075,10 +2079,10 @@ void vic_do_simple(void) {
 
     if(cpu.vic.borderFlag) {
         int firstLine = (cpu.vic.RSEL) ? 0x33 : 0x37;
-        if((cpu.vic.DEN) && (r == firstLine)) cpu.vic.borderFlag = false;
+        if((cpu.vic.DEN) && (r == firstLine)) { cpu.vic.borderFlag = false; }
     } else {
         int lastLine = (cpu.vic.RSEL) ? 0xfb : 0xf7;
-        if(r == lastLine) cpu.vic.borderFlag = true;
+        if(r == lastLine) { cpu.vic.borderFlag = true; }
     }
 
 
@@ -2108,7 +2112,7 @@ void vic_do_simple(void) {
     cycles += 3;
 
     int cyclesleft = CYCLESPERRASTERLINE - cycles;
-    if(cyclesleft) cpu_clock(cyclesleft);
+    if(cyclesleft) { cpu_clock(cyclesleft); }
 }
 
 /*****************************************************************************************************/
@@ -2121,15 +2125,17 @@ void vic_adrchange(void) {
 
     unsigned charsetAddr = r18 & 0x0e;
     if((cpu.vic.bank & 0x4000) == 0) {
-        if(charsetAddr == 0x04) cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters);
-        else if(charsetAddr == 0x06) cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters) + 0x800;
-        else
+        if(charsetAddr == 0x04) { cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters); }
+        else if(charsetAddr == 0x06) { cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters) + 0x800; }
+        else {
             cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank];
-    } else
+        }
+    } else {
         cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank];
+    }
 
     cpu.vic.bitmapPtr = (uint8_t *) &cpu.RAM[cpu.vic.bank | ((r18 & 0x08) * 0x400)];
-    if((cpu.vic.R[0x11] & 0x60) == 0x60) cpu.vic.bitmapPtr = (uint8_t *) ((uintptr_t) cpu.vic.bitmapPtr & 0xf9ff);
+    if((cpu.vic.R[0x11] & 0x60) == 0x60) { cpu.vic.bitmapPtr = (uint8_t *) ((uintptr_t) cpu.vic.bitmapPtr & 0xf9ff); }
 }
 
 /*****************************************************************************************************/
@@ -2141,7 +2147,7 @@ void vic_write(uint32_t address, uint8_t value) {
         case 0x11 :
             cpu.vic.R[address] = value;
             cpu.vic.intRasterLine = (cpu.vic.intRasterLine & 0xff) | ((((uint16_t) value) << 1) & 0x100);
-            if(cpu.vic.rasterLine == 0x30) cpu.vic.denLatch |= value & 0x10;
+            if(cpu.vic.rasterLine == 0x30) { cpu.vic.denLatch |= value & 0x10; }
 
             cpu.vic.badline = (cpu.vic.denLatch && (cpu.vic.rasterLine >= 0x30) && (cpu.vic.rasterLine <= 0xf7) &&
                                ((cpu.vic.rasterLine & 0x07) == (value & 0x07)));
@@ -2264,8 +2270,9 @@ void resetVic(void) {
     cpu.vic.R[0x18] = 0x14;
     cpu.vic.R[0x19] = 0x0f;
 
-    for(unsigned i = 0; i < sizeof(cpu.vic.COLORRAM); i++)
+    for(unsigned i = 0; i < sizeof(cpu.vic.COLORRAM); i++) {
         cpu.vic.COLORRAM[i] = (rand() & 0x0F);
+    }
 
     cpu.RAM[0x39FF] = 0x0;
     cpu.RAM[0x3FFF] = 0x0;

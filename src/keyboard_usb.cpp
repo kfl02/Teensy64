@@ -27,7 +27,8 @@
 
 
 extern "C" {
-void __keyboardmatrixEmptyFunction(void *keys) {} ;//FB
+void __keyboardmatrixEmptyFunction(void *keys) {
+} ;//FB
 }
 
 static void ((*keyboardmatrixFunc)(void *keys)) = __keyboardmatrixEmptyFunction;
@@ -46,12 +47,12 @@ bool c64USBKeyboard::claim(Device_t *dev, int type, const uint8_t *descriptors, 
     //println("c64USBKeyboard claim this=", (uint32_t)this, HEX);
 
     // only claim at interface level
-    if(type != 1) return false;
-    if(len < 9 + 9 + 7) return false;
+    if(type != 1) { return false; }
+    if(len < 9 + 9 + 7) { return false; }
 
     uint32_t numendpoint = descriptors[4];
-    if(numendpoint < 1) return false;
-    if(descriptors[5] != 3) return false; // bInterfaceClass, 3 = HID
+    if(numendpoint < 1) { return false; }
+    if(descriptors[5] != 3) { return false; } // bInterfaceClass, 3 = HID
     if(descriptors[6] != 1) return false; // bInterfaceSubClass, 1 = Boot Device
     if(descriptors[7] != 1) return false; // bInterfaceProtocol, 1 = Keyboard
     if(descriptors[9] != 9) return false;
@@ -100,7 +101,8 @@ void c64USBKeyboard::disconnect() {
 // so unfortunate as static weak callbacks are, it probably
 // needs to be supported for compatibility
 extern "C" {
-void __c64USBKeyboardEmptyCallback() {}
+void __c64USBKeyboardEmptyCallback() {
+}
 }
 
 void c64USBKeyboard::new_data(const Transfer_t *transfer) {
