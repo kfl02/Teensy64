@@ -36,27 +36,26 @@ Copyright Frank Bösing, 2017
 #ifndef _UTIL_C64H_
 #define _UTIL_C64H_
 
-
 #define AudioNoInterrupts() (NVIC_DISABLE_IRQ(IRQ_SOFTWARE))
 #define AudioInterrupts()   (NVIC_ENABLE_IRQ(IRQ_SOFTWARE))
 
-
 void disableEventResponder(void);
-
 void enableCycleCounter(void);
+
 inline unsigned fbmillis(void)  __attribute__((always_inline));
 inline unsigned fbmicros(void)  __attribute__((always_inline));
 inline unsigned fbnanos(void) __attribute__((always_inline));
 
 
-unsigned fbmillis(void) { return (ARM_DWT_CYCCNT * (1000.0/F_CPU)); }
-unsigned fbmicros(void) { return (ARM_DWT_CYCCNT * (1000000.0/F_CPU)); }
+unsigned fbmillis(void) { return (ARM_DWT_CYCCNT * (1000.0 / F_CPU)); }
+
+unsigned fbmicros(void) { return (ARM_DWT_CYCCNT * (1000000.0 / F_CPU)); }
+
 unsigned fbnanos(void) { return (ARM_DWT_CYCCNT * (1000000000.0 / F_CPU)); }
 
 float setAudioSampleFreq(float freq);
 void setAudioOff(void);
 void setAudioOn(void);
 void listInterrupts();
-
 
 #endif

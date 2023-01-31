@@ -55,9 +55,9 @@ typedef uint8_t tpixel ;
 #define SCREENMEM VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET
 
 #else
-#define TFT_HEIGHT  	240
-#define TFT_WIDTH   	320
-#define BORDER      	20
+#define TFT_HEIGHT    240
+#define TFT_WIDTH    320
+#define BORDER        20
 #define SCREEN_HEIGHT (200+2*BORDER)
 #define SCREEN_WIDTH   320
 #define LINE_MEM_WIDTH 320
@@ -82,89 +82,92 @@ struct tsprite {
 */
 
 struct tvic {
-  uint32_t timeStart, neededTime;
-  int intRasterLine; //Interruptsetting
-  int rasterLine;
-  uint16_t bank;
-  uint16_t vcbase;
-  uint8_t rc;
+    uint32_t timeStart, neededTime;
+    int intRasterLine; //Interruptsetting
+    int rasterLine;
+    uint16_t bank;
+    uint16_t vcbase;
+    uint8_t rc;
 
-  uint8_t borderFlag;  //Top-Bottom border flag
-  uint8_t borderFlagH; //Left-Right border flag
-  uint8_t idle;
-  uint8_t denLatch;
-  uint8_t badline;
-  uint8_t BAsignal;
-  uint8_t lineHasSprites;
-  int8_t spriteCycles0_2;
-  int8_t spriteCycles3_7;
-  int fgcollision;
+    uint8_t borderFlag;  //Top-Bottom border flag
+    uint8_t borderFlagH; //Left-Right border flag
+    uint8_t idle;
+    uint8_t denLatch;
+    uint8_t badline;
+    uint8_t BAsignal;
+    uint8_t lineHasSprites;
+    int8_t spriteCycles0_2;
+    int8_t spriteCycles3_7;
+    int fgcollision;
 
-  uint8_t * charsetPtrBase;
-  uint8_t * charsetPtr;
-  uint8_t * bitmapPtr;
-  uint16_t videomatrix;
+    uint8_t *charsetPtrBase;
+    uint8_t *charsetPtr;
+    uint8_t *bitmapPtr;
+    uint16_t videomatrix;
 
-  uint16_t colors[15]; // translated ([palette]) colors. Only the first four entries are used.
-  uint16_t palette[16];
+    uint16_t colors[15]; // translated ([palette]) colors. Only the first four entries are used.
+    uint16_t palette[16];
 
-  MyIntervalTimer lineClock;
+    MyIntervalTimer lineClock;
 
-  union {
-    uint8_t R[0x40];
-    struct {
-      uint8_t M0X, M0Y, M1X, M1Y, M2X, M2Y, M3X, M3Y, M4X, M4Y, M5X, M5Y, M6X, M6Y, M7X, M7Y;
-      uint8_t MX8; // Sprite-X Bit 8 $D010
-      uint8_t YSCROLL: 3, RSEL: 1, DEN: 1, BMM: 1, ECM: 1, RST8: 1; // $D011
-      uint8_t RASTER; // Rasterline $D012
-      uint8_t LPX; // Lightpen X $D013
-      uint8_t LPY; // Lightpen Y $D014
-      uint8_t ME;  // Sprite Enable $D015
-      uint8_t XSCROLL: 3, CSEL: 1, MCM: 1, RES: 1, : 2; // $D016
-      uint8_t MYE; // Sprite Y-Expansion $D017
-      uint8_t : 1, CB: 3, VM: 4; // $D018
-      uint8_t IRST: 1, IMBC: 1, IMMC: 1, ILP: 1, : 3, IRQ: 1; // $D019
-      uint8_t ERST: 1, EMBC: 1, EMMC: 1, ELP: 1, : 4; // $D01A
-      uint8_t MDP; // Sprite-Daten-Priority $D01B
-      uint8_t MMC; // Sprite Multicolor $D01C
-      uint8_t MXE; // Sprite X-Expansion $D01D
-      uint8_t MM;  // Sprite-Sprite collision $D01E
-      uint8_t MD;  // Sprite-Data collision $D01F
-      uint8_t EC: 4, : 4; // Bordercolor $D020
-      uint8_t B0C: 4, : 4; // Backgroundcolor 0 $D021
-      uint8_t B1C: 4, : 4; // Backgroundcolor 1 $D022
-      uint8_t B2C: 4, : 4; // Backgroundcolor 2 $D023
-      uint8_t B3C: 4, : 4; // Backgroundcolor 3 $D024
-      uint8_t MM0: 4, : 4; // Sprite Multicolor 0 $D025
-      uint8_t MM1: 4, : 4; // Sprite Multicolor 1 $D026
-      uint8_t M0C: 4, : 4; // Spritecolor 0 $D027
-      uint8_t M1C: 4, : 4; // Spritecolor 1 $D028
-      uint8_t M2C: 4, : 4; // Spritecolor 2 $D029
-      uint8_t M3C: 4, : 4; // Spritecolor 3 $D02A
-      uint8_t M4C: 4, : 4; // Spritecolor 4 $D02B
-      uint8_t M5C: 4, : 4; // Spritecolor 5 $D02C
-      uint8_t M6C: 4, : 4; // Spritecolor 6 $D02D
-      uint8_t M7C: 4, : 4; // Spritecolor 7 $D02E
+    union {
+        uint8_t R[0x40];
+        struct {
+            uint8_t M0X, M0Y, M1X, M1Y, M2X, M2Y, M3X, M3Y, M4X, M4Y, M5X, M5Y, M6X, M6Y, M7X, M7Y;
+            uint8_t MX8; // Sprite-X Bit 8 $D010
+            uint8_t YSCROLL: 3, RSEL: 1, DEN: 1, BMM: 1, ECM: 1, RST8: 1; // $D011
+            uint8_t RASTER; // Rasterline $D012
+            uint8_t LPX; // Lightpen X $D013
+            uint8_t LPY; // Lightpen Y $D014
+            uint8_t ME;  // Sprite Enable $D015
+            uint8_t XSCROLL: 3, CSEL: 1, MCM: 1, RES: 1, : 2; // $D016
+            uint8_t MYE; // Sprite Y-Expansion $D017
+            uint8_t : 1, CB: 3, VM: 4; // $D018
+            uint8_t IRST: 1, IMBC: 1, IMMC: 1, ILP: 1, : 3, IRQ: 1; // $D019
+            uint8_t ERST: 1, EMBC: 1, EMMC: 1, ELP: 1, : 4; // $D01A
+            uint8_t MDP; // Sprite-Daten-Priority $D01B
+            uint8_t MMC; // Sprite Multicolor $D01C
+            uint8_t MXE; // Sprite X-Expansion $D01D
+            uint8_t MM;  // Sprite-Sprite collision $D01E
+            uint8_t MD;  // Sprite-Data collision $D01F
+            uint8_t EC: 4, : 4; // Bordercolor $D020
+            uint8_t B0C: 4, : 4; // Backgroundcolor 0 $D021
+            uint8_t B1C: 4, : 4; // Backgroundcolor 1 $D022
+            uint8_t B2C: 4, : 4; // Backgroundcolor 2 $D023
+            uint8_t B3C: 4, : 4; // Backgroundcolor 3 $D024
+            uint8_t MM0: 4, : 4; // Sprite Multicolor 0 $D025
+            uint8_t MM1: 4, : 4; // Sprite Multicolor 1 $D026
+            uint8_t M0C: 4, : 4; // Spritecolor 0 $D027
+            uint8_t M1C: 4, : 4; // Spritecolor 1 $D028
+            uint8_t M2C: 4, : 4; // Spritecolor 2 $D029
+            uint8_t M3C: 4, : 4; // Spritecolor 3 $D02A
+            uint8_t M4C: 4, : 4; // Spritecolor 4 $D02B
+            uint8_t M5C: 4, : 4; // Spritecolor 5 $D02C
+            uint8_t M6C: 4, : 4; // Spritecolor 6 $D02D
+            uint8_t M7C: 4, : 4; // Spritecolor 7 $D02E
+        };
     };
-  };
 
-  //tsprite spriteInfo[8];//todo
-  uint16_t spriteLine[SPRITE_MAX_X];
+    //tsprite spriteInfo[8];//todo
+    uint16_t spriteLine[SPRITE_MAX_X];
 
-  uint8_t lineMemChr[40];
-  uint8_t lineMemCol[40];
-  uint8_t COLORRAM[1024];
-
+    uint8_t lineMemChr[40];
+    uint8_t lineMemCol[40];
+    uint8_t COLORRAM[1024];
 };
 
 void vic_do(void);
+
 void vic_do_simple(void);
+
 void vic_displaySimpleModeScreen(void);
 
-void vic_write(uint32_t address, uint8_t value) ;
+void vic_write(uint32_t address, uint8_t value);
+
 uint8_t vic_read(uint32_t address);
 
 void vic_colorwrite(uint32_t address, uint8_t value);
+
 uint8_t vic_colorread(uint32_t address);
 
 void vic_adrchange(void);

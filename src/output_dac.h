@@ -31,22 +31,26 @@
 #include "AudioStream.h"
 #include "DMAChannel.h"
 
-class AudioOutputAnalog : public AudioStream
-{
+class AudioOutputAnalog : public AudioStream {
 public:
-	AudioOutputAnalog(void) : AudioStream(1, inputQueueArray) { begin(); }
-	virtual void update(void);
-	void begin(void);
-	void analogReference(int ref);
-	static DMAChannel dma;
-//private:
-	static audio_block_t *block_left_1st;
-	static audio_block_t *block_left_2nd;
-	static bool update_responsibility;
-	audio_block_t *inputQueueArray[1];
-	static void isr(void);
-	static uint8_t volume;
+    AudioOutputAnalog(void) : AudioStream(1, inputQueueArray) { begin(); }
 
+    virtual void update(void);
+
+    void begin(void);
+
+    void analogReference(int ref);
+
+    static DMAChannel dma;
+//private:
+    static audio_block_t *block_left_1st;
+    static audio_block_t *block_left_2nd;
+    static bool update_responsibility;
+    audio_block_t *inputQueueArray[1];
+
+    static void isr(void);
+
+    static uint8_t volume;
 };
 
 #endif

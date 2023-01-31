@@ -56,25 +56,28 @@ extern uVGA uvga;
 
 #include "logo.h"
 #include "ILI9341_t3n.h"
+
 extern ILI9341_t3n tft;
 
 #endif //VGA
 
 
 #if USBHOST
+
 #include "keyboard_usb.h"
+
 extern USBHost myusb;
 #endif // USBHOST
 
 #if VGA && USBHOST
 #define USBHS_ASYNC_ON {\
-		USBHS_USBCMD |= USBHS_USBCMD_ASE;\
-		Serial.println("USBHS: Async ON.");\
-}		
+        USBHS_USBCMD |= USBHS_USBCMD_ASE;\
+        Serial.println("USBHS: Async ON.");\
+}
 
 #define USBHS_ASYNC_OFF {\
-		USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);\
-		Serial.println("USBHS: Async OFF.");\
+        USBHS_USBCMD &= ~(USBHS_USBCMD_ASE);\
+        Serial.println("USBHS: Async OFF.");\
 }		
 #else // VGA && USBHOS
 #define USBHS_ASYNC_ON
@@ -82,15 +85,18 @@ extern USBHost myusb;
 #endif // VGA && USBHOS
 
 void initMachine();
+
 void resetMachine() __attribute__ ((noreturn));
+
 void resetExternal();
+
 unsigned loadFile(const char *filename);
 
 extern uint8_t SDinitialized;
 
 
 #if PAL == 1
-#define CRYSTAL       	17734475.0f
+#define CRYSTAL        17734475.0f
 #define CLOCKSPEED      ( CRYSTAL / 18.0f) // 985248,61 Hz
 #define CYCLESPERRASTERLINE 63
 #define LINECNT         312 //Rasterlines
@@ -106,8 +112,8 @@ extern uint8_t SDinitialized;
 #define VBLANK_LAST     40
 #endif // PAL == 1
 
-#define LINEFREQ      			(CLOCKSPEED / CYCLESPERRASTERLINE) //Hz
-#define REFRESHRATE       		(LINEFREQ / LINECNT) //Hz
+#define LINEFREQ                (CLOCKSPEED / CYCLESPERRASTERLINE) //Hz
+#define REFRESHRATE            (LINEFREQ / LINECNT) //Hz
 #define LINETIMER_DEFAULT_FREQ (1000000.0f/LINEFREQ)
 
 
@@ -148,8 +154,8 @@ extern uint8_t SDinitialized;
 #if 1
 #define WRITE_ATN_CLK_DATA(value) { \
     digitalWriteFast(PIN_SERIAL_ATN, (~value & 0x08));\
-	digitalWriteFast(PIN_SERIAL_CLK, (~value & 0x10));\
-	digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20));\
+    digitalWriteFast(PIN_SERIAL_CLK, (~value & 0x10));\
+    digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20));\
 }
 /*
 #define READ_CLK_DATA() \

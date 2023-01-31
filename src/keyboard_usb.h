@@ -21,9 +21,9 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
- 
- //Modified for Teensy64 (c) F.Bösing
- 
+
+//Modified for Teensy64 (c) F.Bösing
+
 #include <Arduino.h>
 #include "USBHost_t36.h"  // Read this header first for key info
 
@@ -31,52 +31,70 @@
 #define keyboard_usb_h_
 
 class c64USBKeyboard : public USBDriver { /* , public USBHIDInput */
-  public:
+public:
     typedef union {
-      struct {
-        uint8_t numLock : 1;
-        uint8_t capsLock : 1;
-        uint8_t scrollLock : 1;
-        uint8_t compose : 1;
-        uint8_t kana : 1;
-        uint8_t reserved : 3;
-      };
-      uint8_t byte;
+        struct {
+            uint8_t numLock: 1;
+            uint8_t capsLock: 1;
+            uint8_t scrollLock: 1;
+            uint8_t compose: 1;
+            uint8_t kana: 1;
+            uint8_t reserved: 3;
+        };
+        uint8_t byte;
     } KBDLeds_t;
-  public:
+public:
     c64USBKeyboard(USBHost &host) {
-      init();
+        init();
     }
+
     c64USBKeyboard(USBHost *host) {
-      init();
+        init();
     }
-    void    attachC64(void (*keyboardmatrix)(void *keys));//FB
-    void     LEDS(uint8_t leds);
-    uint8_t  LEDS() {
-      return leds_.byte;
+
+    void attachC64(void (*keyboardmatrix)(void *keys));//FB
+    void LEDS(uint8_t leds);
+
+    uint8_t LEDS() {
+        return leds_.byte;
     }
-    void     updateLEDS(void);
-    bool     numLock() {
-      return leds_.numLock;
+
+    void updateLEDS(void);
+
+    bool numLock() {
+        return leds_.numLock;
     }
-    bool     capsLock() {
-      return leds_.capsLock;
+
+    bool capsLock() {
+        return leds_.capsLock;
     }
-    bool     scrollLock() {
-      return leds_.scrollLock;
+
+    bool scrollLock() {
+        return leds_.scrollLock;
     }
-    void     numLock(bool f);
-    void     capsLock(bool f);
-    void     scrollLock(bool f);    
-  protected:
+
+    void numLock(bool f);
+
+    void capsLock(bool f);
+
+    void scrollLock(bool f);
+
+protected:
     virtual bool claim(Device_t *device, int type, const uint8_t *descriptors, uint32_t len);
+
     virtual void control(const Transfer_t *transfer);
+
     virtual void disconnect();
+
     static void callback(const Transfer_t *transfer);
+
     void new_data(const Transfer_t *transfer);
+
     void init();
-  private:
+
+private:
     void update();
+
     Pipe_t *datapipe;
     setup_t setup;
     uint8_t report[8];
@@ -84,7 +102,8 @@ class c64USBKeyboard : public USBDriver { /* , public USBHIDInput */
     bool update_leds_ = false;
     Pipe_t mypipes[2] __attribute__ ((aligned(32)));
     Transfer_t mytransfers[4] __attribute__ ((aligned(32)));
-	void    (*keyboardmatrixFunction)(void *keys);//FB
+
+    void (*keyboardmatrixFunction)(void *keys);//FB
 };
 
 #endif

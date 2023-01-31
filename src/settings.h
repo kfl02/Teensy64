@@ -37,7 +37,7 @@
 #define settings_h_
 
 #ifndef PS2KEYBOARD
-#define PS2KEYBOARD 	0	//Use 0 for USB-HOST
+#define PS2KEYBOARD    0    //Use 0 for USB-HOST
 #endif
 
 
@@ -52,7 +52,6 @@
 
 
 #define EXACTTIMINGDURATION 600ul //ms exact timing after IEC-BUS activity
-
 
 
 #endif

@@ -38,11 +38,9 @@
 
 void initKeyboard();
 void initJoysticks();
-
 void sendKey(char key);
-void sendString(const char * p);
+void sendString(const char *p);
 void do_sendString();//call in yield()
-
 uint8_t cia1PORTA(void);
 uint8_t cia1PORTB(void);
 

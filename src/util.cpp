@@ -38,123 +38,125 @@ Copyright Frank Bösing, 2017
 
 //Attention, don't use WFI-instruction - the CPU does not count cycles during sleep
 void enableCycleCounter(void) {
-  ARM_DEMCR |= ARM_DEMCR_TRCENA;
-  ARM_DWT_CTRL |= ARM_DWT_CTRL_CYCCNTENA;
+    ARM_DEMCR |= ARM_DEMCR_TRCENA;
+    ARM_DWT_CTRL |= ARM_DWT_CTRL_CYCCNTENA;
 }
 
 extern "C" volatile uint32_t systick_millis_count;
+
 void mySystick_isr(void) { systick_millis_count++; }
+
 void myUnused_isr(void) {};
 
 void disableEventResponder(void) {
-	_VectorsRam[14] = myUnused_isr;  // pendablesrvreq
-	_VectorsRam[15] = mySystick_isr; // Short Systick
+    _VectorsRam[14] = myUnused_isr;  // pendablesrvreq
+    _VectorsRam[15] = mySystick_isr; // Short Systick
 }
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
+
 static float setDACFreq(float freq) {
 
-  if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) return 0;
 
-  unsigned int t = (float)F_BUS / freq - 0.5f;
-  PDB0_SC = 0;
-  PDB0_IDLY = 1;
-  PDB0_MOD = t;
-  PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
-  PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
-  PDB0_CH0C1 = 0x0101;
+    unsigned int t = (float) F_BUS / freq - 0.5f;
+    PDB0_SC = 0;
+    PDB0_IDLY = 1;
+    PDB0_MOD = t;
+    PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
+    PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
+    PDB0_CH0C1 = 0x0101;
 
-  return (float)F_BUS / t;
+    return (float) F_BUS / t;
 }
 
 float setAudioSampleFreq(float freq) {
-  int f;
-  f = setDACFreq(freq);
-  return f;
+    int f;
+    f = setDACFreq(freq);
+    return f;
 }
 
 void setAudioOff(void) {
 #if !VGA
-  if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
-  PDB0_SC = 0;
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
+    PDB0_SC = 0;
 #endif
-  AudioNoInterrupts();
-  NVIC_DISABLE_IRQ(IRQ_USBOTG);
-  //NVIC_DISABLE_IRQ(IRQ_USBHS);
+    AudioNoInterrupts();
+    NVIC_DISABLE_IRQ(IRQ_USBOTG);
+    //NVIC_DISABLE_IRQ(IRQ_USBHS);
 }
 
 void setAudioOn(void) {
 #if !VGA
-  if (!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
-  PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
-  PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) return;
+    PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
+    PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
 #endif
-  AudioInterrupts();
-  NVIC_ENABLE_IRQ(IRQ_USBOTG);
-  //NVIC_ENABLE_IRQ(IRQ_USBHS);
+    AudioInterrupts();
+    NVIC_ENABLE_IRQ(IRQ_USBOTG);
+    //NVIC_ENABLE_IRQ(IRQ_USBHS);
 }
 
 void listInterrupts() {
 
 #if defined(__MK66FX1M0__)
-const char isrName[][24] = {
-	//NMI
-	"","reset handler", "nmi", "hard fault", "memmanage fault", "bus fault", "usage fault",
-	"unknown fault","unknown fault","unknown fault", "unknown fault",
-	"svcall", "debugmonitor", "unknown fault", "pendablesrvreq", "systick timer",
-	//ISR
-	"dma_ch0","dma_ch1","dma_ch2","dma_ch3","dma_ch4","dma_ch5","dma_ch6","dma_ch7",
-	"dma_ch8","dma_ch9","dma_ch10","dma_ch11","dma_ch12","dma_ch13","dma_ch14","dma_ch15",
-	"dma_error","mcm","flash_cmd","flash_error","low_voltage","wakeup","watchdog",
-	"randnum","i2c0","i2c1","spi0","spi1","i2s0_tx","i2s0_rx","unused 46","uart0_status",
-	"uart0_error","uart1_status","uart1_error","uart2_status","uart2_error","uart3_status",
-	"uart3_error","adc0","cmp0","cmp1","ftm0","ftm1","ftm2","cmt","rtc_alarm","rtc_seconds",
-	"pit0","pit1","pit2","pit3","pdb","usb","usb_charge","unused","dac0","mcg_isr","lptmr",
-	"porta","portb","portc","portd","porte","software (audio)","spi2","uart4_status","uart4_error",
-	"unused","unused","cmp2","ftm3","dac1","adc1","i2c2","can0_message","can0_bus_off",
-	"can0_error","can0_tx_warn","can0_rx_warn","can0_wakeup","sdhc","enet_timer","enet_tx",
-	"enet_rx","enet_error","lpuart0_status","tsi0","tpm1","tpm2","usbhs_phy","i2c3","cmp3",
-	"usbhs","can1_message","can1_bus_off","can1_error","can1_tx_warn","can1_rx_warn","can1_wakeup"};
+    const char isrName[][24] = {
+        //NMI
+        "","reset handler", "nmi", "hard fault", "memmanage fault", "bus fault", "usage fault",
+        "unknown fault","unknown fault","unknown fault", "unknown fault",
+        "svcall", "debugmonitor", "unknown fault", "pendablesrvreq", "systick timer",
+        //ISR
+        "dma_ch0","dma_ch1","dma_ch2","dma_ch3","dma_ch4","dma_ch5","dma_ch6","dma_ch7",
+        "dma_ch8","dma_ch9","dma_ch10","dma_ch11","dma_ch12","dma_ch13","dma_ch14","dma_ch15",
+        "dma_error","mcm","flash_cmd","flash_error","low_voltage","wakeup","watchdog",
+        "randnum","i2c0","i2c1","spi0","spi1","i2s0_tx","i2s0_rx","unused 46","uart0_status",
+        "uart0_error","uart1_status","uart1_error","uart2_status","uart2_error","uart3_status",
+        "uart3_error","adc0","cmp0","cmp1","ftm0","ftm1","ftm2","cmt","rtc_alarm","rtc_seconds",
+        "pit0","pit1","pit2","pit3","pdb","usb","usb_charge","unused","dac0","mcg_isr","lptmr",
+        "porta","portb","portc","portd","porte","software (audio)","spi2","uart4_status","uart4_error",
+        "unused","unused","cmp2","ftm3","dac1","adc1","i2c2","can0_message","can0_bus_off",
+        "can0_error","can0_tx_warn","can0_rx_warn","can0_wakeup","sdhc","enet_timer","enet_tx",
+        "enet_rx","enet_error","lpuart0_status","tsi0","tpm1","tpm2","usbhs_phy","i2c3","cmp3",
+        "usbhs","can1_message","can1_bus_off","can1_error","can1_tx_warn","can1_rx_warn","can1_wakeup"};
 #endif
 
-  //unsigned adrFaultNMI = (unsigned)_VectorsRam[3];
-  unsigned adrUnusedInt = (unsigned)_VectorsRam[IRQ_FTFL_COLLISION + 16];//IRQ_FTFL_COLLISION is normally unused
-  unsigned adr;
+    //unsigned adrFaultNMI = (unsigned)_VectorsRam[3];
+    unsigned adrUnusedInt = (unsigned) _VectorsRam[IRQ_FTFL_COLLISION + 16];//IRQ_FTFL_COLLISION is normally unused
+    unsigned adr;
 
-  Serial.println("Interrupts in use:");
+    Serial.println("Interrupts in use:");
 
 #if 1
-  Serial.println("NMI (non-maskable):");
-  for (unsigned i = 1; i < 16; i++) {
-    adr = (unsigned)_VectorsRam[i];
-    if (adr != adrUnusedInt) {
-      Serial.print(i);
-      Serial.print(": \t");
-      Serial.print(isrName[i]);
-      Serial.print("\t0x");
-      Serial.print(adr, HEX);
-      Serial.println();
+    Serial.println("NMI (non-maskable):");
+    for(unsigned i = 1; i < 16; i++) {
+        adr = (unsigned) _VectorsRam[i];
+        if(adr != adrUnusedInt) {
+            Serial.print(i);
+            Serial.print(": \t");
+            Serial.print(isrName[i]);
+            Serial.print("\t0x");
+            Serial.print(adr, HEX);
+            Serial.println();
+        }
     }
-
-  }
 #endif
 
-  Serial.println("IRQ:");
-  for (unsigned i = 0; i < NVIC_NUM_INTERRUPTS; i++) {
-    adr = (unsigned)_VectorsRam[i + 16];
-    if (adr != adrUnusedInt) {
-      Serial.print(i);
-      Serial.print(": ");
-      Serial.print("\tPriority:");
-      Serial.print(NVIC_GET_PRIORITY(i));
-      Serial.print("\t0x");
-      Serial.print(adr, HEX);
-	  if (adr < 0x10000000) Serial.print("\t");
-	  Serial.print("\t");
-	  Serial.print(isrName[i + 16]);
-      if (NVIC_IS_ENABLED(i)) Serial.print("\t is enabled");
-      Serial.println();
+    Serial.println("IRQ:");
+    for(unsigned i = 0; i < NVIC_NUM_INTERRUPTS; i++) {
+        adr = (unsigned) _VectorsRam[i + 16];
+        if(adr != adrUnusedInt) {
+            Serial.print(i);
+            Serial.print(": ");
+            Serial.print("\tPriority:");
+            Serial.print(NVIC_GET_PRIORITY(i));
+            Serial.print("\t0x");
+            Serial.print(adr, HEX);
+            if(adr < 0x10000000) Serial.print("\t");
+            Serial.print("\t");
+            Serial.print(isrName[i + 16]);
+            if(NVIC_IS_ENABLED(i)) Serial.print("\t is enabled");
+            Serial.println();
+        }
     }
-  }
-  Serial.println();
+    Serial.println();
 }

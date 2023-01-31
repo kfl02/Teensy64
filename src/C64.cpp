@@ -35,11 +35,11 @@ Copyright Frank Bösing, 2017
 
 #include <Teensy64.h>
 
-void setup () {
-  AudioMemory(4);
-  initMachine();
+void setup() {
+    AudioMemory(4);
+    initMachine();
 }
 
-void loop () {
+void loop() {
 }
 

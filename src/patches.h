@@ -42,6 +42,7 @@
 extern SdFat SD;
 
 void patchLOAD(void);
+
 void patchSAVE(void);
 
 #endif
