@@ -270,23 +270,24 @@ uint8_t cia1PORTA(void) {
     uint8_t filter = ~cpu.cia1.R[0x01] & cpu.cia1.R[0x03];
 
     if(kbdData.k) {
-        if(keymatrixmap[1][kbdData.k] & filter) { v &= ~keymatrixmap[0][kbdData.k] };
+        if(keymatrixmap[1][kbdData.k] & filter) { v &= ~keymatrixmap[0][kbdData.k]; }
     }
 
     if(kbdData.ke) {
         if(kbdData.ke & 0x02) { //Shift-links
-            if(keymatrixmap[1][0xff] & filter) { v &= ~keymatrixmap[0][0xff] };
+            if(keymatrixmap[1][0xff] & filter) { v &= ~keymatrixmap[0][0xff]; }
         }
         if(kbdData.ke & 0x20) { //Shift-rechts
-            if(keymatrixmap[1][0xfe] & filter) { v &= ~keymatrixmap[0][0xfe] };
+            if(keymatrixmap[1][0xfe] & filter) { v &= ~keymatrixmap[0][0xfe]; }
         }
         if(kbdData.ke & 0x11) { //Control
-            if(keymatrixmap[1][0xfd] & filter) { v &= ~keymatrixmap[0][0xfd] };
+            if(keymatrixmap[1][0xfd] & filter) { v &= ~keymatrixmap[0][0xfd]; }
         }
         if(kbdData.ke & 0x88) { //Windows (=> Commodore)
-            if(keymatrixmap[1][0xfc] & filter) { v &= ~keymatrixmap[0][0xfc] };
+            if(keymatrixmap[1][0xfc] & filter) { v &= ~keymatrixmap[0][0xfc]; }
         }
     }
+
     return v;
 }
 
@@ -319,16 +320,16 @@ uint8_t cia1PORTB(void) {
 
     if(kbdData.ke) {
         if(kbdData.ke & 0x02) { //Shift-links
-            if(keymatrixmap[0][0xff] & filter) { v &= ~keymatrixmap[1][0xff] };
+            if(keymatrixmap[0][0xff] & filter) { v &= ~keymatrixmap[1][0xff]; }
         }
         if(kbdData.ke & 0x20) { //Shift-rechts
-            if(keymatrixmap[0][0xfe] & filter) { v &= ~keymatrixmap[1][0xfe] };
+            if(keymatrixmap[0][0xfe] & filter) { v &= ~keymatrixmap[1][0xfe]; }
         }
         if(kbdData.ke & 0x11) { //Control
-            if(keymatrixmap[0][0xfd] & filter) { v &= ~keymatrixmap[1][0xfd] };
+            if(keymatrixmap[0][0xfd] & filter) { v &= ~keymatrixmap[1][0xfd]; }
         }
         if(kbdData.ke & 0x88) { //Windows (=> Commodore)
-            if(keymatrixmap[0][0xfc] & filter) { v &= ~keymatrixmap[1][0xfc] };
+            if(keymatrixmap[0][0xfc] & filter) { v &= ~keymatrixmap[1][0xfc]; }
         }
     }
 

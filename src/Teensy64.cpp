@@ -34,7 +34,6 @@
 */
 
 #include <Arduino.h>
-#include <core_pins.h>
 #include "Teensy64.h"
 
 

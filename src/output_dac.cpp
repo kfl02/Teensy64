@@ -64,8 +64,7 @@
 #endif
 
 
-DMAMEM static uint16_t
-dac_buffer[AUDIO_BLOCK_SAMPLES*2];
+DMAMEM static uint16_t dac_buffer[AUDIO_BLOCK_SAMPLES*2];
 audio_block_t *AudioOutputAnalog::block_left_1st = NULL;
 audio_block_t *AudioOutputAnalog::block_left_2nd = NULL;
 bool AudioOutputAnalog::update_responsibility = false;
@@ -89,22 +88,20 @@ void AudioOutputAnalog::begin(void) {
     // set the programmable delay block to trigger DMA requests
     dma.begin(true); // Allocate the DMA channel first
 
+#if !VGA
     if(!(SIM_SCGC6 & SIM_SCGC6_PDB)
-
-
        || (PDB0_SC & PDB_CONFIG) != PDB_CONFIG
        || PDB0_MOD != PDB_PERIOD
        || PDB0_IDLY != 1
        || PDB0_CH0C1 != 0x0101) {
-#if !VGA
         SIM_SCGC6 |= SIM_SCGC6_PDB;
         PDB0_IDLY = 1;
         PDB0_MOD = PDB_PERIOD;
         PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
         PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
         PDB0_CH0C1 = 0x0101;
-#endif
     }
+#endif
 
     dma.TCD->SADDR = dac_buffer;
     dma.TCD->SOFF = 2;
