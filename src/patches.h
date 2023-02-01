@@ -32,8 +32,11 @@
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
 
 */
-#ifndef Teensy64_patches_h_
-#define Teensy64_patches_h_
+
+#pragma once
+
+#ifndef TEENSY64_PATCHES_H
+#define TEENSY64_PATCHES_H
 
 #include <SdFat.h>
 #include "cpu.h"
@@ -42,7 +45,6 @@
 extern SdFat SD;
 
 void patchLOAD(void);
-
 void patchSAVE(void);
 
-#endif
+#endif // TEENSY64_PATCHES_H

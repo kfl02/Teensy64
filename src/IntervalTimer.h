@@ -39,6 +39,8 @@ F.B.
 
 */
 
+#pragma once
+
 #ifndef __INTERVALTIMERX_H__
 #define __INTERVALTIMERX_H__
 

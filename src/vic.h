@@ -33,8 +33,10 @@
 
 */
 
-#ifndef Teensy64_vic_h_
-#define Teensy64_vic_h_
+#pragma once
+
+#ifndef TEENSY64_VIC_H
+#define TEENSY64_VIC_H
 
 #include <Arduino.h>
 #include "Teensy64.h"
@@ -149,4 +151,4 @@ struct tvic {
     void nextPalette();
 };
 
-#endif
+#endif // TEENSY64_VIC_H

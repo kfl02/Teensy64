@@ -24,8 +24,10 @@
  * THE SOFTWARE.
  */
 
-#ifndef output_dac_h_
-#define output_dac_h_
+#pragma once
+
+#ifndef TEENSY64_OUTPUT_DAC_H
+#define TEENSY64_OUTPUT_DAC_H
 
 #include "Arduino.h"
 #include "AudioStream.h"
@@ -55,4 +57,4 @@ class AudioOutputAnalog : public AudioStream {
 
 };
 
-#endif
+#endif // TEENSY64_OUTPUT_DAC_H

@@ -32,11 +32,14 @@
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
 
 */
-#ifndef Teensy64_h_
-#define Teensy64_h_
+#ifndef TEENSY64_H
+#define TEENSY64_H
 
 #include <Arduino.h>
 #include <DMAChannel.h>
+#include <SdFat.h>
+#include <reSID.h>
+
 #include "settings.h"
 
 #ifdef VERSION
@@ -46,18 +49,11 @@
 #define VERSION "09"
 #define NTSC (!PAL)
 
-#include "logo.h"
 #include "ILI9341_t3n.h"
-
-extern ILI9341_t3n tft;
-
-
 #include "keyboard_usb.h"
 
+extern ILI9341_t3n tft;
 extern USBHost myusb;
-
-#define USBHS_ASYNC_ON
-#define USBHS_ASYNC_OFF
 
 void initMachine();
 void resetMachine() __attribute__ ((noreturn));
@@ -152,9 +148,7 @@ extern uint8_t SDinitialized;
 #define PIN_JOY2_A1     A14
 #define PIN_JOY2_A2     A15
 
-#include <SdFat.h>
 #include "output_dac.h"
-#include <reSID.h>
 #include "cpu.h"
 
-#endif // Teensy64_h_
+#endif // TEENSY64_H

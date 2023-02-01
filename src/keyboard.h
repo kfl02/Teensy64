@@ -33,8 +33,12 @@
 
 */
 
-#ifndef Teensy64_keyboard_h_
-#define Teensy64_keyboard_h_
+#pragma once
+
+#ifndef TEENSY64_KEYBOARD_H
+#define TEENSY64_KEYBOARD_H
+
+#include <cstdint>
 
 void initKeyboard();
 void initJoysticks();
@@ -44,4 +48,4 @@ void do_sendString();//call in yield()
 uint8_t cia1PORTA(void);
 uint8_t cia1PORTB(void);
 
-#endif
+#endif // TEENSY64_KEYBOARD_H

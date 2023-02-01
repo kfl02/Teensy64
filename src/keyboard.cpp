@@ -328,15 +328,8 @@ void usbKeyboardmatrix(void *keys) { //Interrupt
             Serial.print("Joysticks ");
             Serial.println((cpu.swapJoysticks) ? "swapped" : "default");
 
-            USBHS_ASYNC_ON;
-
             //TODO: Does not work: Bug in USB Code ?
             keyboard.numLock(cpu.swapJoysticks);
-
-            // keyboard.updateLEDS();
-            // delay(100);
-
-            USBHS_ASYNC_OFF;
 
             return;
         } else if(kbdData.ke == 0x10) {

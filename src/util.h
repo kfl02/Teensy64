@@ -33,8 +33,10 @@ Copyright Frank Bösing, 2017
 
 */
 
-#ifndef _UTIL_C64H_
-#define _UTIL_C64H_
+#pragma once
+
+#ifndef TEENSY64_UTIL_H
+#define TEENSY64_UTIL_H
 
 #define AudioNoInterrupts() (NVIC_DISABLE_IRQ(IRQ_SOFTWARE))
 #define AudioInterrupts()   (NVIC_ENABLE_IRQ(IRQ_SOFTWARE))
@@ -64,4 +66,4 @@ void setAudioOff(void);
 void setAudioOn(void);
 void listInterrupts();
 
-#endif
+#endif // TEENSY64_UTIL_H

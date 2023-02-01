@@ -33,8 +33,8 @@
 
 */
 
-#ifndef settings_h_
-#define settings_h_
+#ifndef TEENSY64_SETTINGS_H
+#define TEENSY64_SETTINGS_H
 
 //Note: PAL/NTSC are EMULATED - This is not the real videomode!
 #ifndef PAL
@@ -47,4 +47,4 @@
 
 #define EXACTTIMINGDURATION 600ul //ms exact timing after IEC-BUS activity
 
-#endif
+#endif // TEENSY64_SETTINGS_H

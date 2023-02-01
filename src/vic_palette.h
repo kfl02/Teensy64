@@ -35,9 +35,14 @@
 
 #pragma once
 
+#ifndef TEENSY64_VIC_PALETTE_H
+#define TEENSY64_VIC_PALETTE_H
+
 #include <cstdint>
 
 const int num_palettes = 6;
 const int num_palette_fns = 4;
 extern const uint16_t palettes[num_palettes][16];
 extern uint16_t (*palette_fns[num_palette_fns])(uint16_t);
+
+#endif // TEENSY64_VIC_PALETTE_H

@@ -33,8 +33,10 @@
 
 */
 
-#ifndef Teensy64_cpu_h_
-#define Teensy64_cpu_h_
+#pragma once
+
+#ifndef TEENSY64_CPU_H
+#define TEENSY64_CPU_H
 
 #include <Arduino.h>
 #include <arm_math.h>
@@ -333,4 +335,4 @@ static inline uint8_t gpioRead(uint8_t pin) {
     }
 }
 
-#endif
+#endif // TEENSY64_CPU_H

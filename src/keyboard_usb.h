@@ -24,11 +24,14 @@
 
 //Modified for Teensy64 (c) F.Bösing
 
+#pragma once
+
+#ifndef TEENSY64_KEYBOARD_USB_H
+#define TEENSY64_KEYBOARD_USB_H
+
 #include <Arduino.h>
 #include "USBHost_t36.h"  // Read this header first for key info
 
-#ifndef keyboard_usb_h_
-#define keyboard_usb_h_
 
 class c64USBKeyboard : public USBDriver { /* , public USBHIDInput */
 public:
@@ -99,4 +102,4 @@ private:
     void (*keyboardmatrixFunction)(void *keys);
 };
 
-#endif
+#endif // TEENSY64_KEYBOARD_USB_H

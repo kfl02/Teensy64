@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef _ILI9341_t3_font_PlayBold
 #define _ILI9341_t3_font_PlayBold
 

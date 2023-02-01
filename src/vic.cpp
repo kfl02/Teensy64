@@ -49,8 +49,6 @@
 #include "vic.h"
 #include "vic_palette.h"
 
-
-#include "font_Play-Regular.h"
 #include "font_Play-Bold.h"
 
 #define MAXCYCLESSPRITES0_2       3

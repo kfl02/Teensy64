@@ -36,7 +36,6 @@
 #include <Arduino.h>
 #include "Teensy64.h"
 
-
 ILI9341_t3n tft = ILI9341_t3n(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
 extern uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
 
@@ -168,7 +167,6 @@ void initMachine() {
     tft.setFrameBuffer(&screen[0][0]);
     tft.useFrameBuffer(true);
     tft.updateScreenAsync(true);
-    memcpy(&screen[0][0], (uint16_t *) logo_320x240, sizeof(screen));
 
     SDinitialized = SD.begin(BUILTIN_SDCARD);
 
@@ -228,8 +226,7 @@ void initMachine() {
 
     resetExternal();
 
-    while((millis() - m) <= 1500) { ;
-    }
+    while((millis() - m) <= 1500) {}
 
     setupGPIO_DMA();
 
@@ -252,9 +249,10 @@ void initMachine() {
 // Switch off/replace Teensyduinos` yield and systick stuff
 
 void yield(void) {
-
     static volatile uint8_t running = 0;
+
     if(running) { return; }
+
     running = 1;
 
     //Input via terminal to keyboardbuffer (for BASIC only)
@@ -263,6 +261,7 @@ void yield(void) {
         sendKey(r);
         Serial.write(r);
     }
+
     do_sendString();
 
     myusb.Task();
