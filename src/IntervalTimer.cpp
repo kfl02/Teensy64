@@ -28,6 +28,7 @@
  * SOFTWARE.
  */
 
+#include <cstdint>
 #include "IntervalTimer.h"
 
 
@@ -74,7 +75,7 @@ bool MyIntervalTimer::beginCycles(void (*funct)(), uint32_t cycles) {
             }
 
             if(++channel >= KINETISK_PIT_CHANNELS + NUM_CHANNELS) {
-                channel = NULL;
+                channel = nullptr;
 
                 return false;
             }

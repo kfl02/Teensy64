@@ -74,7 +74,7 @@ bool c64USBKeyboard::claim(Device_t *dev, int type, const uint8_t *descriptors, 
     datapipe->callback_function = callback;
     queue_Data_Transfer(datapipe, report, 8, this);
     mk_setup(setup, 0x21, 10, 0, 0, 0); // 10=SET_IDLE
-    queue_Control_Transfer(dev, &setup, NULL, this);
+    queue_Control_Transfer(dev, &setup, nullptr, this);
     keyboardmatrixFunction = keyboardmatrixFunc;//FB
     Serial.println("USB Keyboard connected.");
 

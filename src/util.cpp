@@ -80,21 +80,21 @@ float setAudioSampleFreq(float freq) {
 }
 
 void setAudioOff(void) {
-#if !VGA
     if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return; }
+
     PDB0_SC = 0;
-#endif
+
     AudioNoInterrupts();
     NVIC_DISABLE_IRQ(IRQ_USBOTG);
     //NVIC_DISABLE_IRQ(IRQ_USBHS);
 }
 
 void setAudioOn(void) {
-#if !VGA
     if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return; }
+
     PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
     PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
-#endif
+
     AudioInterrupts();
     NVIC_ENABLE_IRQ(IRQ_USBOTG);
     //NVIC_ENABLE_IRQ(IRQ_USBHS);

@@ -74,22 +74,15 @@ public:
     }
 
     void numLock(bool f);
-
     void capsLock(bool f);
-
     void scrollLock(bool f);
 
 protected:
     virtual bool claim(Device_t *device, int type, const uint8_t *descriptors, uint32_t len);
-
     virtual void control(const Transfer_t *transfer);
-
     virtual void disconnect();
-
     static void callback(const Transfer_t *transfer);
-
     void new_data(const Transfer_t *transfer);
-
     void init();
 
 private:
@@ -103,7 +96,7 @@ private:
     Pipe_t mypipes[2] __attribute__ ((aligned(32)));
     Transfer_t mytransfers[4] __attribute__ ((aligned(32)));
 
-    void (*keyboardmatrixFunction)(void *keys);//FB
+    void (*keyboardmatrixFunction)(void *keys);
 };
 
 #endif

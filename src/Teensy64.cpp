@@ -37,17 +37,8 @@
 #include "Teensy64.h"
 
 
-#if VGA
-#include <uVGA.h>
-#include <uVGA_valid_settings.h>
-UVGA_STATIC_FRAME_BUFFER(uvga_fb);
-uVGA uvga;
-uint8_t * VGA_frame_buffer = uvga_fb;
-
-#else
 ILI9341_t3n tft = ILI9341_t3n(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
 extern uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
-#endif
 
 #include "vic_palette.h"
 
@@ -86,9 +77,9 @@ void oneRasterLine(void) {
         cpu.lineCycles = cpu.lineCyclesAbs = 0;
 
         if(!cpu.exactTiming) {
-            vic_do();
+            cpu.vic.render();
         } else {
-            vic_do_simple();
+            cpu.vic.renderSimple();
         }
 
         if(--lc == 0) {
@@ -105,87 +96,6 @@ void oneRasterLine(void) {
         }
     };
 }
-
-
-/*
-	The USB HOST feature causes pixel-flicker on VGA, because it with GPIO on the same periphal bus.
-	These functions sync to the HSYNC-Signal, and enable USB on the right edge of the screen only.
-*/
-
-#define USBHS_PERIODIC_TRANSFERS_DISABLE 0
-
-#if VGA && USBHOST && USBHS_PERIODIC_TRANSFERS_DISABLE
-//As above, but with enable/disable USB Periodic transfers
-FASTRUN void ftm0_isr(void) {
-
-    int16_t c = rasterLineCounterVGA;
-    uint32_t i1 = FTM0_C2SC;
-    if (i1 & FTM_CSC_CHF) {
-        FTM0_C2SC = i1 & ~FTM_CSC_CHF;
-        //Enable USB Host Periodic Transfers
-        USBHS_USBCMD |= ( USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);
-        c++;
-        if (c == modeline.vtotal) {c = 0;}
-        rasterLineCounterVGA = c;
-//		digitalWriteFast(13,0);
-    } else {
-        uint32_t i2 = FTM0_C3SC;
-        FTM0_C3SC = i2 & ~FTM_CSC_CHF;
-        //Disable USB Host Periodic Transfers
-        if (c > 51 && c < 593) USBHS_USBCMD &= ~(USBHS_USBCMD_PSE /* | USBHS_USBCMD_ASE */);
-//  	digitalWriteFast(13,1);
-    }
-}
-#endif
-
-void add_uVGAhsync(void) {
-
-    USBHS_ASYNC_OFF;
-
-    Serial.println("uVGA: Add hSync interrupt.");
-
-#if VGA && USBHOST && USBHS_PERIODIC_TRANSFERS_DISABLE
-
-    // Add channels 2 + 3 to FTM 0 as triggers for FTM0 interrupt
-
-    uint32_t sc = FTM0_SC;
-    FTM0_SC = 0;
-
-#if 0
-    Serial.print("FTM 0 Channel 0 SC: 0x");
-    Serial.println(FTM0_C0SC, HEX);
-    Serial.print("FTM 0 Channel 0 V:");
-    Serial.println(FTM0_C0V);
-    Serial.print("FTM 0 Channel 1 SC: 0x");
-    Serial.println(FTM0_C1SC, HEX);
-    Serial.print("FTM 0 Channel 1 V:");
-    Serial.println(FTM0_C1V);
-#endif
-
-
-    //Add channels 2+3
-    FTM0_C2SC = FTM0_C0SC | FTM_CSC_CHIE; // With interrupt
-    FTM0_C2V = FTM0_C0V - 260; //Value determined experimentally
-
-    FTM0_C3SC = FTM0_C1SC;
-    FTM0_C3V = FTM0_C1V + 145; //Value determined experimentally
-
-    const uint32_t channel_shift = (2 >> 1) << 3;	// combine bits is at position (channel pair number (=channel number /2) * 8)
-    FTM0_COMBINE |= ((FTM0_COMBINE & ~(0x000000FF << channel_shift)) | ((FTM_COMBINE_COMBINE0 | FTM_COMBINE_COMP0) << channel_shift));
-
-    // re-start FTM0
-    FTM0_SC = sc;
-
-    noInterrupts();
-    NVIC_SET_PRIORITY(IRQ_FTM0, 0);
-    NVIC_ENABLE_IRQ(IRQ_FTM0);
-    uvga.waitSync();
-    rasterLineCounterVGA = 0;
-    interrupts();
-
-#endif
-}
-
 
 DMAChannel dma_gpio(false);
 
@@ -219,12 +129,8 @@ void initMachine() {
 #error Teensy64: Please select F_CPU=240MHz
 #endif
 
-#if !VGA && F_BUS < 120000000
+#if F_BUS < 120000000
 #error Teensy64: Please select F_BUS=120MHz
-#endif
-
-#if VGA && !(defined(USB_RAWHID) || defined(USB_DISABLED))
-#pragma message "Teensy64: Please select USB Type Raw HID"
 #endif
 
 #if AUDIO_BLOCK_SAMPLES > 32
@@ -255,18 +161,7 @@ void initMachine() {
 
     Serial.begin(9600);
     Serial.println("Init");
-#if USBHOST
     myusb.begin();
-#endif
-
-#if VGA
-
-    uvga.set_static_framebuffer(VGA_frame_buffer);
-    uvga.begin(&modeline);
-    uvga.clear(0x00);
-   // for (int i =0; i<299;i++) memset(VGA_frame_buffer + i*464, palette[14], 452-(37));
-
-#else
 
     tft.begin(144000000);
     tft.setRotation(3);
@@ -274,19 +169,14 @@ void initMachine() {
     tft.useFrameBuffer(true);
     tft.updateScreenAsync(true);
     memcpy(&screen[0][0], (uint16_t *) logo_320x240, sizeof(screen));
-#endif
 
     SDinitialized = SD.begin(BUILTIN_SDCARD);
 
     float audioSampleFreq;
 
-#if !VGA
     audioSampleFreq = AUDIOSAMPLERATE;
     audioSampleFreq = setAudioSampleFreq(audioSampleFreq);
-#else
-    audioSampleFreq = ((float)modeline.pixel_clock / (float) modeline.htotal);
-    FTM0_C7SC |= FTM_CSC_DMA; //Enable Audio-DMA-Trigger on every VGA-Rasterline. FTM0 is VGA Timer.
-#endif
+
     playSID.setSampleParameters(CLOCKSPEED, audioSampleFreq);
 
     delay(250);
@@ -308,13 +198,6 @@ void initMachine() {
     Serial.println();
     Serial.print("F_BUS (MHz): ");
     Serial.print((int) (F_BUS / 1e6));
-    Serial.println();
-    Serial.print("Display: ");
-#ifdef VGA
-    Serial.println("VGA");
-#else
-    Serial.println("TFT");
-#endif
     Serial.println();
 
     Serial.print("Emulated video: ");
@@ -340,17 +223,13 @@ void initMachine() {
     resetPLA();
     resetCia1();
     resetCia2();
-    resetVic();
+    cpu.vic.reset();
     cpu_reset();
 
     resetExternal();
 
     while((millis() - m) <= 1500) { ;
     }
-
-#if VGA
-    add_uVGAhsync();
-#endif
 
     setupGPIO_DMA();
 

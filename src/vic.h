@@ -40,21 +40,6 @@
 #include "Teensy64.h"
 #include "IntervalTimer.h"
 
-#if VGA
-#define BORDER         36 // Top/Bottom Screen border
-#define SCREEN_WIDTH   320
-#define LINE_MEM_WIDTH 464
-#define FIRSTDISPLAYLINE ( 51 - BORDER ) - 1
-#define LASTDISPLAYLINE  ( 284 )
-
-#define XOFFSET		    4
-#define YOFFSET		    16
-#define BORDER_LEFT     48
-#define BORDER_RIGHT    40
-typedef uint8_t tpixel ;
-#define SCREENMEM VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET
-
-#else
 #define TFT_HEIGHT    240
 #define TFT_WIDTH    320
 #define BORDER        20
@@ -68,8 +53,6 @@ typedef uint8_t tpixel ;
 #define BORDER_RIGHT    0
 
 typedef uint16_t tpixel;
-
-#endif
 
 #define SPRITE_MAX_X (320 + 24)
 
@@ -105,8 +88,8 @@ struct tvic {
     uint8_t *bitmapPtr;
     uint16_t videomatrix;
 
-    uint16_t colors[15]; // translated ([palette]) colors. Only the first four entries are used.
     uint16_t palette[16];
+    uint8_t paletteNo;
 
     MyIntervalTimer lineClock;
 
@@ -154,24 +137,16 @@ struct tvic {
     uint8_t lineMemChr[40];
     uint8_t lineMemCol[40];
     uint8_t COLORRAM[1024];
+
+    void render(void);
+    void renderSimple(void);
+    void displaySimpleModeScreen(void);
+    void write(uint32_t address, uint8_t value);
+    uint8_t read(uint32_t address);
+    void adrchange(void);
+    void reset(void);
+    void updatePalette(int n);
+    void nextPalette();
 };
-
-void vic_do(void);
-
-void vic_do_simple(void);
-
-void vic_displaySimpleModeScreen(void);
-
-void vic_write(uint32_t address, uint8_t value);
-
-uint8_t vic_read(uint32_t address);
-
-void vic_colorwrite(uint32_t address, uint8_t value);
-
-uint8_t vic_colorread(uint32_t address);
-
-void vic_adrchange(void);
-
-void resetVic(void);
 
 #endif

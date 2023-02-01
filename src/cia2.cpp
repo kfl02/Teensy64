@@ -64,7 +64,7 @@ void cia2_write(uint32_t address, uint8_t value) {
 
 
             cpu.vic.bank = ((~value) & 0x03) * 16384;
-            vic_adrchange();
+            cpu.vic.adrchange();
             cpu.cia2.R[address] = value;
         }
             break;

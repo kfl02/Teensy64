@@ -59,7 +59,7 @@ uint8_t r_chr(uint32_t address) {
     return rom_characters[address & (sizeof(rom_characters) - 1)];
 } //CHARACTER ROM
 uint8_t r_vic(uint32_t address) {
-    return vic_read(address);
+    return cpu.vic.read(address);
 }
 
 uint8_t r_sid(uint32_t address) {
@@ -106,7 +106,7 @@ void w_ramz(uint32_t address, uint8_t value) {
 }
 
 void w_vic(uint32_t address, uint8_t value) {
-    vic_write(address, value);
+    cpu.vic.write(address, value);
 }
 
 void w_col(uint32_t address, uint8_t value) {

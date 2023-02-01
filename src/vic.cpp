@@ -57,25 +57,8 @@
 #define MAXCYCLESSPRITES3_7        5
 #define MAXCYCLESSPRITES    (MAXCYCLESSPRITES0_2 + MAXCYCLESSPRITES3_7)
 
-DMAMEM uint16_t
-screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
-
-#if VGA
-uint16_t * const SCREENMEM = VGA_frame_buffer + LINE_MEM_WIDTH * YOFFSET + XOFFSET;
-#else
+DMAMEM uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
 uint16_t *const SCREENMEM = &screen[0][0];
-#endif
-
-/*****************************************************************************************************/
-/*****************************************************************************************************/
-/*****************************************************************************************************/
-
-inline __attribute__((always_inline))
-void fastFillLine(tpixel *p, const tpixel *pe, const uint16_t col, uint16_t *spl);
-
-inline __attribute__((always_inline))
-void fastFillLineNoSprites(tpixel *p, const tpixel *pe, const uint16_t col);
-
 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
@@ -103,7 +86,6 @@ void fastFillLineNoSprites(tpixel *p, const tpixel *pe, const uint16_t col);
     *p++ = col; \
   }
 
-
 #if 0
 #define PRINTOVERFLOW   \
   if (p>pe) { \
@@ -122,7 +104,38 @@ void fastFillLineNoSprites(tpixel *p, const tpixel *pe, const uint16_t col);
 #endif
 
 /*****************************************************************************************************/
-void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+/*****************************************************************************************************/
+/*****************************************************************************************************/
+
+inline __attribute__((always_inline))
+static void fastFillLineNoSprites(tpixel *p, const tpixel *pe, const uint16_t col) {
+    int i = 0;
+
+    while(p < pe) {
+        *p++ = col;
+        i = (i + 1) & 0x07;
+        if(!i) CYCLES(1);
+    }
+}
+
+inline __attribute__((always_inline))
+static void fastFillLine(tpixel *p, const tpixel *pe, const uint16_t col, uint16_t *spl) {
+    if(spl != nullptr && cpu.vic.lineHasSprites) {
+        int i = 0;
+        uint16_t sprite;
+        while(p < pe) {
+            SPRITEORFIXEDCOLOR();
+            i = (i + 1) & 0x07;
+            if(!i) CYCLES(1);
+        };
+    } else {
+
+        fastFillLineNoSprites(p, pe, col);
+    }
+}
+
+/*****************************************************************************************************/
+static void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     // Standard-Textmodus(ECM/BMM/MCM=0/0/0)
     /*
       Standard-Textmodus (ECM / BMM / MCM = 0/0/0)
@@ -197,7 +210,7 @@ void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
             chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
             fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-            bgcol = cpu.vic.colors[1];
+            bgcol = cpu.vic.palette[cpu.vic.R[0x21]];
             x++;
 
             *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -216,7 +229,7 @@ void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
             chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
             fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-            bgcol = cpu.vic.colors[1];
+            bgcol = cpu.vic.palette[cpu.vic.R[0x21]];
             x++;
 
             *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -244,7 +257,7 @@ void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 };
 
 /*****************************************************************************************************/
-void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     /*
       Multicolor-Textmodus (ECM/BMM/MCM=0/0/1)
       Dieser Modus ermöglicht es, auf Kosten der horizontalen Auflösung vierfarbige Zeichen darzustellen.
@@ -397,7 +410,7 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
             int c;
 
-            bgcol = cpu.vic.colors[1];
+            bgcol = cpu.vic.palette[cpu.vic.R[0x21]];;
             colors[0] = bgcol;
 
             if(cpu.vic.idle) {
@@ -407,8 +420,8 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             } else {
                 BADLINE(x);
 
-                colors[1] = cpu.vic.colors[2];
-                colors[2] = cpu.vic.colors[3];
+                colors[1] = cpu.vic.palette[cpu.vic.R[0x22]];;
+                colors[2] = cpu.vic.palette[cpu.vic.R[0x23]];;
 
                 chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
                 c = cpu.vic.lineMemCol[x];
@@ -448,7 +461,7 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
             int c;
 
-            bgcol = cpu.vic.colors[1];
+            bgcol = cpu.vic.palette[cpu.vic.R[0x21]];;
             colors[0] = bgcol;
 
             if(cpu.vic.idle) {
@@ -458,8 +471,8 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
             } else {
                 BADLINE(x);
 
-                colors[1] = cpu.vic.colors[2];
-                colors[2] = cpu.vic.colors[3];
+                colors[1] = cpu.vic.palette[cpu.vic.R[0x22]];;
+                colors[2] = cpu.vic.palette[cpu.vic.R[0x23]];;
 
                 chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
                 c = cpu.vic.lineMemCol[x];
@@ -517,7 +530,7 @@ void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 }
 
 /*****************************************************************************************************/
-void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     /*
        Standard-Bitmap-Modus (ECM / BMM / MCM = 0/1/0) ("HIRES")
        In diesem Modus (wie in allen Bitmap-Modi) liest der VIC die Grafikdaten aus einer 320×200-Bitmap,
@@ -654,7 +667,7 @@ void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 }
 
 /*****************************************************************************************************/
-void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     /*
       Multicolor-Bitmap-Modus (ECM/BMM/MCM=0/1/1)
 
@@ -755,7 +768,7 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 
         while(p < pe - 8) {
 
-            colors[0] = cpu.vic.colors[1];
+            colors[0] = cpu.vic.palette[cpu.vic.R[0x21]];;
 
             if(cpu.vic.idle) {
                 cpu_clock(1);
@@ -787,7 +800,7 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         };
         while(p < pe) {
 
-            colors[0] = cpu.vic.colors[1];
+            colors[0] = cpu.vic.palette[cpu.vic.R[0x21]];;
 
             if(cpu.vic.idle) {
                 cpu_clock(1);
@@ -833,7 +846,7 @@ void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 }
 
 /*****************************************************************************************************/
-void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     //ECM-Textmodus (ECM/BMM/MCM=1/0/0)
     /*
       Dieser Textmodus entspricht dem Standard-Textmodus, erlaubt es aber, für
@@ -959,7 +972,7 @@ void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 /* Ungültige Modi ************************************************************************************/
 /*****************************************************************************************************/
 
-void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     /*
       Ungültiger Textmodus (ECM/BMM/MCM=1/0/1)
 
@@ -1083,7 +1096,7 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         PRINTOVERFLOWS
     } else { //Keine Sprites
         //Farbe immer schwarz
-        const uint16_t bgcol = palette[0];
+        const uint16_t bgcol = cpu.vic.palette[0];
         while(p < pe - 8) {
 
             BADLINE(x);
@@ -1126,7 +1139,7 @@ void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 }
 
 /*****************************************************************************************************/
-void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     /*
       Ungültiger Bitmap-Modus 1 (ECM/BMM/MCM=1/1/0)
 
@@ -1192,7 +1205,7 @@ void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         PRINTOVERFLOWS
     } else { //Keine Sprites
         //Farbe immer schwarz
-        const uint16_t bgcol = palette[0];
+        const uint16_t bgcol = cpu.vic.palette[0];
         while(p < pe - 8) {
 
             BADLINE(x);
@@ -1235,7 +1248,7 @@ void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 }
 
 /*****************************************************************************************************/
-void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
     /*
       Ungültiger Bitmap-Modus 2 (ECM/BMM/MCM=1/1/1)
 
@@ -1316,7 +1329,7 @@ void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
         PRINTOVERFLOWS
     } else { //Keine Sprites
 
-        const uint16_t bgcol = palette[0];
+        const uint16_t bgcol = cpu.vic.palette[0];
         while(p < pe - 8) {
 
             BADLINE(x);
@@ -1362,10 +1375,11 @@ void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
 /*****************************************************************************************************/
 
 typedef void (*modes_t)(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc); //Funktionspointer
-const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7};
+
+static const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7};
 
 
-void vic_do(void) {
+void tvic::render(void) {
     uint16_t vc;
     uint16_t xscroll;
     tpixel *pe;
@@ -1485,57 +1499,15 @@ void vic_do(void) {
     //max_x =  (!cpu.vic.CSEL) ? 40:38;
     p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH;
 
-
-#if !VGA
     pe = p + SCREEN_WIDTH;
     //Left Screenborder: Cycle 10
     spl = &cpu.vic.spriteLine[24];
     cpu_clock(6);
-#else
-    pe = p + SCREEN_WIDTH + BORDER_LEFT;
-    uint16_t col;
-    col = cpu.vic.colors[0];
 
-    //Left Screenborder: Cycle 10
-    for (int i = 0; i <3; i++) {
-      cpu_clock(1);
-      *p++ = col;*p++ = col;*p++ = col;*p++ = col;
-      *p++ = col;*p++ = col;*p++ = col;*p++ = col;
-    }
-
-    //Left Screenborder: Cycle 13
-#if 0  //mit Sprites
-    spl = &cpu.vic.spriteLine[0];
-    uint16_t sprite;
-    for (int i=0; i<3; i++) {
-        cpu_clock(1);
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-        SPRITEORFIXEDCOLOR();
-    }
-#else //ohne sprites
-    spl = &cpu.vic.spriteLine[24];
-    for (int i=0; i<3; i++) {
-        cpu_clock(1);
-        *p++ = col;*p++ = col;*p++ = col;*p++ = col;
-        *p++ = col;*p++ = col;*p++ = col;*p++ = col;
-    }
-
-#endif
-
-#endif
 
     if(cpu.vic.borderFlag) {
-
-#if !VGA
         cpu_clock(5);
-#endif
-        fastFillLineNoSprites(p, pe + BORDER_RIGHT, cpu.vic.colors[0]);
+        fastFillLineNoSprites(p, pe + BORDER_RIGHT, cpu.vic.palette[cpu.vic.R[0x20]]);
         goto noDisplayIncRC;
     }
 
@@ -1551,7 +1523,7 @@ void vic_do(void) {
     xscroll = cpu.vic.XSCROLL;
 
     if(xscroll > 0) {
-        uint16_t col = cpu.vic.colors[0];
+        uint16_t col = cpu.vic.palette[cpu.vic.R[0x20]];;
 
         if(!cpu.vic.CSEL) {
             cpu_clock(1);
@@ -1576,16 +1548,6 @@ void vic_do(void) {
     mode = (cpu.vic.ECM << 2) | (cpu.vic.BMM << 1) | cpu.vic.MCM;
 
     if(!cpu.vic.idle) {
-
-#if 0
-        static uint8_t omode = 99;
-        if (mode != omode) {
-          Serial.print("Graphicsmode:");
-          Serial.println(mode);
-          omode = mode;
-        }
-#endif
-
         modes[mode](p, pe, spl, vc);
         vc = (vc + 40) & 0x3ff;
     } else {
@@ -1686,7 +1648,7 @@ void vic_do(void) {
 
     if(!cpu.vic.CSEL) {
         cpu_clock(1);
-        uint16_t col = cpu.vic.colors[0];
+        uint16_t col = cpu.vic.palette[cpu.vic.R[0x20]];;
         //p = &screen[r - FIRSTDISPLAYLINE][0];
         p = SCREENMEM + (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + BORDER_LEFT;
 #if 0
@@ -1736,23 +1698,6 @@ void vic_do(void) {
 
 //Rechter Rand nach CSEL, im Textbereich
     cpu_clock(5);
-#if VGA
-    p = SCREENMEM +  (r - FIRSTDISPLAYLINE) * LINE_MEM_WIDTH + SCREEN_WIDTH + BORDER_LEFT;
-    pe += BORDER_RIGHT;
-#if 0
-      // Sprites im Rand
-      while (p < pe) {
-        SPRITEORFIXEDCOLOR();
-      }
-#else
-      //keine Sprites im Rand
-      while (p < pe) {
-        *p++ = col;
-      }
-#endif
-
-#endif
-
     noDisplayIncRC:
     /* 3.7.2
       5. In der ersten Phase von Zyklus 58 wird geprüft, ob RC=7 ist. Wenn ja,
@@ -1951,70 +1896,23 @@ void vic_do(void) {
     cpu_clock(3);
 #endif
 
-
-#if 0
-    if (cpu.vic.idle) {
-        Serial.print("Cycles line ");
-        Serial.print(r);
-        Serial.print(": ");
-        Serial.println(cpu.lineCyclesAbs);
-    }
-#endif
-
-
     return;
 }
 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 /*****************************************************************************************************/
-void fastFillLineNoSprites(tpixel *p, const tpixel *pe, const uint16_t col) {
-    int i = 0;
 
-    while(p < pe) {
-        *p++ = col;
-        i = (i + 1) & 0x07;
-        if(!i) CYCLES(1);
+static void dim() {
+    for(int i = 0; i < ILI9341_TFTWIDTH * ILI9341_TFTHEIGHT; i++) {
+        auto p = SCREENMEM[i];
+
+        SCREENMEM[i] = (p & 0b1110000000000000) >> 2 | (p & 0b0000011110000000) >> 2 | (p & 0b0000000000011100) >> 2;
     }
 }
 
-void fastFillLine(tpixel *p, const tpixel *pe, const uint16_t col, uint16_t *spl) {
-    if(spl != NULL && cpu.vic.lineHasSprites) {
-        int i = 0;
-        uint16_t sprite;
-        while(p < pe) {
-            SPRITEORFIXEDCOLOR();
-            i = (i + 1) & 0x07;
-            if(!i) CYCLES(1);
-        };
-    } else {
-
-        fastFillLineNoSprites(p, pe, col);
-    }
-}
-
-/*****************************************************************************************************/
-/*****************************************************************************************************/
-/*****************************************************************************************************/
-
-void dim() {
-    int p;
-    uint8_t r, g, b;
-
-    Serial.println("dim");
-
-    for(int x = 0; x < ILI9341_TFTWIDTH; x++) {
-        for(int y = 0; y < ILI9341_TFTHEIGHT; y++) {
-            p = tft.readPixel(x, y);
-            ILI9341_t3n::color565toRGB(p, r, g, b);
-            tft.drawPixel(x, y, ILI9341_t3n::color565(r >> 2, g >> 2, b >> 2));
-        }
-    }
-}
-
-void vic_displaySimpleModeScreen(void) {
-#if !VGA
-    // dim();
+void tvic::displaySimpleModeScreen(void) {
+    dim();
 
     tft.setFont(Play_60_Bold);
     tft.setTextColor(0xffff);
@@ -2022,10 +1920,9 @@ void vic_displaySimpleModeScreen(void) {
     tft.print("IEC");
     tft.setCursor(25, 130);
     tft.print("Access");
-#endif
 }
 
-void vic_do_simple(void) {
+void tvic::renderSimple(void) {
     uint16_t vc;
     int cycles = 0;
 
@@ -2119,7 +2016,7 @@ void vic_do_simple(void) {
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-void vic_adrchange(void) {
+void tvic::adrchange(void) {
     uint8_t r18 = cpu.vic.R[0x18];
     cpu.vic.videomatrix = cpu.vic.bank + (unsigned) (r18 & 0xf0) * 64;
 
@@ -2139,7 +2036,7 @@ void vic_adrchange(void) {
 }
 
 /*****************************************************************************************************/
-void vic_write(uint32_t address, uint8_t value) {
+void tvic::write(uint32_t address, uint8_t value) {
 
     address &= 0x3F;
 
@@ -2156,7 +2053,7 @@ void vic_write(uint32_t address, uint8_t value) {
                 cpu.vic.idle = 0;
             }
 
-            vic_adrchange();
+            adrchange();
 
             break;
         case 0x12 :
@@ -2165,7 +2062,7 @@ void vic_write(uint32_t address, uint8_t value) {
             break;
         case 0x18 :
             cpu.vic.R[address] = value;
-            vic_adrchange();
+            adrchange();
             break;
         case 0x19 : //IRQs
             cpu.vic.R[0x19] &= (~value & 0x0f);
@@ -2179,7 +2076,6 @@ void vic_write(uint32_t address, uint8_t value) {
             break;
         case 0x20 ... 0x2E:
             cpu.vic.R[address] = value & 0x0f;
-            cpu.vic.colors[address - 0x20] = cpu.vic.palette[value & 0x0f];
             break;
         case 0x2F ... 0x3F:
             break;
@@ -2187,22 +2083,13 @@ void vic_write(uint32_t address, uint8_t value) {
             cpu.vic.R[address] = value;
             break;
     }
-
-    //#if DEBUGVIC
-#if 0
-    Serial.print("VIC ");
-    Serial.print(address, HEX);
-    Serial.print("=");
-    Serial.println(value, HEX);
-    //logAddr(address, value, 1);
-#endif
 }
 
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-uint8_t vic_read(uint32_t address) {
+uint8_t tvic::read(uint32_t address) {
     uint8_t ret;
 
     address &= 0x3F;
@@ -2242,10 +2129,6 @@ uint8_t vic_read(uint32_t address) {
             break;
     }
 
-#if DEBUGVIC
-    Serial.print("VIC ");
-    logAddr(address, ret, 0);
-#endif
     return ret;
 }
 
@@ -2253,7 +2136,7 @@ uint8_t vic_read(uint32_t address) {
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-void resetVic(void) {
+void tvic::reset(void) {
 
     enableCycleCounter();
 
@@ -2262,7 +2145,7 @@ void resetVic(void) {
     cpu.vic.lineHasSprites = 0;
     memset(&cpu.RAM[0x400], 0, 1000);
     memset(&cpu.vic, 0, sizeof(cpu.vic));
-    memcpy(cpu.vic.palette, (void *) palette, sizeof(cpu.vic.palette));
+    updatePalette(0);
 
     //http://dustlayer.com/vic-ii/2013/4/22/when-visibility-matters
     cpu.vic.R[0x11] = 0x9B;
@@ -2283,20 +2166,20 @@ void resetVic(void) {
     cpu.RAM[0x39FF + 49152] = 0x0;
     cpu.RAM[0x3FFF + 49152] = 0x0;
 
-    vic_adrchange();
+    adrchange();
 }
 
+void tvic::updatePalette(int n) {
+    paletteNo = n % (num_palettes * num_palette_fns);
+    
+    int p = paletteNo % num_palettes;
+    int fn = paletteNo / num_palettes;
 
-/*
-  ?PEEK(678) NTSC =0
-  ?PEEK(678) PAL = 1
-  PRINT TIME$
-*/
-/*
-          Raster-  Takt-   sichtb.  sichtbare
-  VIC-II  System  zeilen   zyklen  Zeilen   Pixel/Zeile
-  -------------------------------------------------------
-  6569    PAL    312     63    284     403
-  6567R8  NTSC   263     65    235     418
-  6567R56A  NTSC   262   64    234     411
-*/
+    for(int i = 0; i < 16; i++) {
+        palette[i] = palette_fns[fn](palettes[p][i]);
+    }
+}
+
+void tvic::nextPalette() {
+    updatePalette(paletteNo + 1);
+}

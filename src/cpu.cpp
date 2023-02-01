@@ -3137,7 +3137,7 @@ void cpu_setExactTiming() {
         //enable exact timing
         LED_ON;
         setAudioOff();
-        vic_displaySimpleModeScreen();
+        cpu.vic.displaySimpleModeScreen();
     }
     cpu.exactTiming = 1;
     cpu.exactTimingStartTime = ARM_DWT_CYCCNT;

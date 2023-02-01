@@ -24,6 +24,7 @@
  * THE SOFTWARE.
  */
 
+#include <cstdint>
 #include "output_dac.h"
 #include "Teensy64.h"
 
@@ -65,8 +66,8 @@
 
 
 DMAMEM static uint16_t dac_buffer[AUDIO_BLOCK_SAMPLES*2];
-audio_block_t *AudioOutputAnalog::block_left_1st = NULL;
-audio_block_t *AudioOutputAnalog::block_left_2nd = NULL;
+audio_block_t *AudioOutputAnalog::block_left_1st = nullptr;
+audio_block_t *AudioOutputAnalog::block_left_2nd = nullptr;
 bool AudioOutputAnalog::update_responsibility = false;
 DMAChannel AudioOutputAnalog::dma(false);
 uint8_t AudioOutputAnalog::volume;
@@ -80,6 +81,7 @@ void AudioOutputAnalog::begin(void) {
     // slowly ramp up to DC voltage, approx 1/4 second
     for(int16_t i = 0; i <= 2048; i += 8) {
         *(int16_t * ) & (DAC0_DAT0L) = i;
+
         delay(1);
     }
 
@@ -88,7 +90,6 @@ void AudioOutputAnalog::begin(void) {
     // set the programmable delay block to trigger DMA requests
     dma.begin(true); // Allocate the DMA channel first
 
-#if !VGA
     if(!(SIM_SCGC6 & SIM_SCGC6_PDB)
        || (PDB0_SC & PDB_CONFIG) != PDB_CONFIG
        || PDB0_MOD != PDB_PERIOD
@@ -101,7 +102,6 @@ void AudioOutputAnalog::begin(void) {
         PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
         PDB0_CH0C1 = 0x0101;
     }
-#endif
 
     dma.TCD->SADDR = dac_buffer;
     dma.TCD->SOFF = 2;
@@ -115,11 +115,7 @@ void AudioOutputAnalog::begin(void) {
     dma.TCD->BITER_ELINKNO = sizeof(dac_buffer) / 2;
     dma.TCD->CSR = DMA_TCD_CSR_INTHALF | DMA_TCD_CSR_INTMAJOR;
 
-#if !VGA
     dma.triggerAtHardwareEvent(DMAMUX_SOURCE_PDB);
-#else
-    dma.triggerAtHardwareEvent(DMAMUX_SOURCE_FTM0_CH6);
-#endif
     dma.enable();
     dma.attachInterrupt(isr);
 }
@@ -139,16 +135,21 @@ void AudioOutputAnalog::update(void) {
     block = receiveReadOnly(0); // input 0
     if(block) {
         __disable_irq();
-        if(block_left_1st == NULL) {
+
+        if(block_left_1st == nullptr) {
             block_left_1st = block;
+
             __enable_irq();
-        } else if(block_left_2nd == NULL) {
+        } else if(block_left_2nd == nullptr) {
             block_left_2nd = block;
+
             __enable_irq();
         } else {
             audio_block_t *tmp = block_left_1st;
+
             block_left_1st = block_left_2nd;
             block_left_2nd = block;
+
             __enable_irq();
             release(tmp);
         }
@@ -165,7 +166,9 @@ void AudioOutputAnalog::isr(void) {
     uint32_t saddr;
 
     saddr = (uint32_t)(dma.TCD->SADDR);
+
     dma.clearInterrupt();
+
     if(saddr < (uint32_t) dac_buffer + sizeof(dac_buffer) / 2) {
         // DMA is transmitting the first half of the buffer
         // so we must fill the second half
@@ -177,16 +180,21 @@ void AudioOutputAnalog::isr(void) {
         dest = (int16_t *) dac_buffer;
         end = (int16_t * ) & dac_buffer[AUDIO_BLOCK_SAMPLES];
     }
+
     block = AudioOutputAnalog::block_left_1st;
+
     if(block) {
         src = block->data;
+
         do {
             // TODO: this should probably dither
             *dest++ = (((*src++) + 32768) >> AudioOutputAnalog::volume);
         } while(dest < end);
+
         AudioStream::release(block);
+
         AudioOutputAnalog::block_left_1st = AudioOutputAnalog::block_left_2nd;
-        AudioOutputAnalog::block_left_2nd = NULL;
+        AudioOutputAnalog::block_left_2nd = nullptr;
     } else {
         do {
             *dest++ = 2048;
