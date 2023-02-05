@@ -47,6 +47,7 @@
 #include <cstdint>
 #include "Teensy64.h"
 #include "cpu.h"
+#include "cia.h"
 
 #define FLAG_CARRY     0x01
 #define FLAG_ZERO      0x02
@@ -96,22 +97,22 @@ struct tcpu cpu;
 struct tio io;
 
 void reset6502();
-void cpu_nmi();
+
 static inline void cpu_irq();
 
-INLINEOP uint8_t read6502(const uint32_t address) __attribute__ ((hot));
+INLINEOP uint8_t read6502(uint32_t address) __attribute__ ((hot));
 
 INLINEOP uint8_t read6502(const uint32_t address) {
     return (*cpu.plamap_r)[address >> 8](address);
 }
 
-INLINEOP uint8_t read6502ZP(const uint32_t address) __attribute__ ((hot)); //Zeropage
+INLINEOP uint8_t read6502ZP(uint32_t address) __attribute__ ((hot)); //Zeropage
 INLINEOP uint8_t read6502ZP(const uint32_t address) {
     return cpu.RAM[address & 0xff];
 }
 
 /* Ein Schreibzugriff auf einen ROM-Bereich speichert das Byte im „darunterliegenden” RAM. */
-INLINEOP void write6502(const uint32_t address, const uint8_t value) __attribute__ ((hot));
+INLINEOP void write6502(uint32_t address, const uint8_t value) __attribute__ ((hot));
 
 INLINEOP void write6502(const uint32_t address, const uint8_t value) {
     (*cpu.plamap_w)[address >> 8](address, value);
@@ -254,7 +255,7 @@ INLINEOP uint32_t getvalueZP() {
     return read6502ZP(cpu.ea);
 }
 
-INLINEOP void putvalue(const uint8_t saveval)  __attribute__ ((hot));
+INLINEOP void putvalue(uint8_t saveval)  __attribute__ ((hot));
 
 INLINEOP void putvalue(const uint8_t saveval) {
     write6502(cpu.ea, saveval);
@@ -3101,13 +3102,13 @@ void cpu_clock(int cycles) {
 
         //NMI
 
-        if(!cpu.nmi && ((cpu.cia2.R[0x0D] & 0x80) | cpu.nmiLine)) {
+        if(!cpu.nmi && ((cpu.cia2.R[CIA_ICR] & CIA_ICR_IR) | cpu.nmiLine)) {
             cpu_nmi_do();
             goto noOpcode;
         }
 
         if(!(cpu.cpustatus & FLAG_INTERRUPT)) {
-            if(((cpu.vic.R[0x19] | cpu.cia1.R[0x0D]) & 0x80)) {
+            if(((cpu.vic.R[VIC_IRQST] | cpu.cia1.R[CIA_ICR]) & CIA_ICR_IR)) {
                 cpu_irq();
                 goto noOpcode;
             }
@@ -3127,8 +3128,6 @@ void cpu_clock(int cycles) {
             while(ARM_DWT_CYCCNT - cpu.lineStartTime < t) { ; }
         }
     };
-
-    return;
 }
 
 //Enable "ExactTiming" Mode

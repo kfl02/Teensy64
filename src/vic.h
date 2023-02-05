@@ -39,13 +39,10 @@
 #define TEENSY64_VIC_H
 
 #include <Arduino.h>
+#include <IntervalTimer.h>
 #include "Teensy64.h"
-#include "IntervalTimer.h"
 
-#define TFT_HEIGHT    240
-#define TFT_WIDTH    320
 #define BORDER        20
-#define SCREEN_HEIGHT (200+2*BORDER)
 #define SCREEN_WIDTH   320
 #define LINE_MEM_WIDTH 320
 #define FIRSTDISPLAYLINE (  51 - BORDER )
@@ -65,6 +62,104 @@ struct tsprite {
   uint8_t MobYexpand; //Y-Epansion FlipFlop
 };
 */
+
+#define VIC_M0X     0x00
+#define VIC_M0Y     0x01
+#define VIC_M1X     0x02
+#define VIC_M1Y     0x03
+#define VIC_M2X     0x04
+#define VIC_M2Y     0x05
+#define VIC_M3X     0x06
+#define VIC_M3Y     0x07
+#define VIC_M4X     0x08
+#define VIC_M4Y     0x09
+#define VIC_M5X     0x0A
+#define VIC_M5Y     0x0B
+#define VIC_M6X     0x0C
+#define VIC_M6Y     0x0D
+#define VIC_M7X     0x0E
+#define VIC_M7Y     0x0F
+#define VIC_MxX8    0x10
+#define VIC_CR1     0x11
+#define VIC_RASTER  0x12
+#define VIC_RSTCMP  0x12
+#define VIC_LPX     0x13
+#define VIC_LPY     0x14
+#define VIC_MxE     0x15
+#define VIC_CR2     0x16
+#define VIC_MxYE    0x17
+#define VIC_VM_CB   0x18
+#define VIC_IRQST   0x19
+#define VIC_IRQEN   0x1A
+#define VIC_MxDP    0x1B
+#define VIC_MxMC    0x1C
+#define VIC_MxXE    0x1D
+#define VIC_MxM     0x1E
+#define VIC_MxD     0x1F
+#define VIC_EC      0x20
+#define VIC_B0C     0x21
+#define VIC_B1C     0x22
+#define VIC_B2C     0x23
+#define VIC_B3C     0x24
+#define VIC_MM0     0x25
+#define VIC_MM1     0x26
+#define VIC_M0C     0x27
+#define VIC_M1C     0x28
+#define VIC_M2C     0x29
+#define VIC_M3C     0x2A
+#define VIC_M4C     0x2B
+#define VIC_M5C     0x2C
+#define VIC_M6C     0x2D
+#define VIC_M7C     0x2E
+
+#define VIC_CR1_YSCROLL_MASK    0x07
+#define VIC_CR1_RSEL            0x08
+#define VIC_CR1_DEN             ßx10
+#define VIC_CR1_BMM             0x20
+#define VIC_CR1_ECM             0x40
+#define VIC_CR1_RST8            0x80
+#define VIC_CR1_xxM_MASK        0x60
+
+#define VIC_CR2_XSCROLL_MASK    0x07
+#define VIC_CR2_CSEL            0x08
+#define VIC_CR2_MCM             ßx10
+#define VIC_CR2_RES             0x20
+#define VIC_CR2_UNUSED_MASK     0xc0
+
+#define VIC_VM_CB_VM_MASK       0xf0
+#define VIC_VM_CB_CB_MASK       0x0e
+#define VIC_VM_CB_UNUSED_MASK   0x01
+
+#define VIC_IRQST_IRST          0x01
+#define VIC_IRQST_IMBC          0x02
+#define VIC_IRQST_IMMC          0x04
+#define VIC_IRQST_ILP           0x08
+#define VIC_IRQST_IRQ           0x80
+#define VIC_IRQST_MASK          0x0f
+#define VIC_IRQST_UNUSED_MASK   0x70
+
+#define VIC_IRQEN_ERST          0x01
+#define VIC_IRQEN_EMBC          0x02
+#define VIC_IRQEN_EMMC          0x04
+#define VIC_IRQEN_ELP           0x08
+#define VIC_IRQEN_UNUSED_MASK   0xf0
+
+#define VIC_EC_UNUSED_MASK  0xf0
+#define VIC_B0C_UNUSED_MASK 0xf0
+#define VIC_B1C_UNUSED_MASK 0xf0
+#define VIC_B2C_UNUSED_MASK 0xf0
+#define VIC_B3C_UNUSED_MASK 0xf0
+#define VIC_MM0_UNUSED_MASK 0xf0
+#define VIC_MM1_UNUSED_MASK 0xf0
+#define VIC_M0C_UNUSED_MASK 0xf0
+#define VIC_M1C_UNUSED_MASK 0xf0
+#define VIC_M2C_UNUSED_MASK 0xf0
+#define VIC_M3C_UNUSED_MASK 0xf0
+#define VIC_M4C_UNUSED_MASK 0xf0
+#define VIC_M5C_UNUSED_MASK 0xf0
+#define VIC_M6C_UNUSED_MASK 0xf0
+#define VIC_M7C_UNUSED_MASK 0xf0
+#define VIC_xC_UNUSED_MASK  0xf0
 
 struct tvic {
     uint32_t timeStart, neededTime;
@@ -93,7 +188,7 @@ struct tvic {
     uint16_t palette[16];
     uint8_t paletteNo;
 
-    MyIntervalTimer lineClock;
+    IntervalTimer lineClock;
 
     union {
         uint8_t R[0x40];
@@ -130,7 +225,7 @@ struct tvic {
             uint8_t M5C: 4, : 4; // Spritecolor 5 $D02C
             uint8_t M6C: 4, : 4; // Spritecolor 6 $D02D
             uint8_t M7C: 4, : 4; // Spritecolor 7 $D02E
-        };
+        } r;
     };
 
     //tsprite spriteInfo[8];//todo
@@ -140,12 +235,12 @@ struct tvic {
     uint8_t lineMemCol[40];
     uint8_t COLORRAM[1024];
 
-    void render(void);
-    void renderSimple(void);
-    void displaySimpleModeScreen(void);
-    void write(uint32_t address, uint8_t value);
-    uint8_t read(uint32_t address);
-    void adrchange(void);
+    static void render(void);
+    static void renderSimple(void);
+    static void displaySimpleModeScreen(void);
+    static void write(uint32_t address, uint8_t value);
+    static uint8_t read(uint32_t address);
+    static void adrchange(void);
     void reset(void);
     void updatePalette(int n);
     void nextPalette();

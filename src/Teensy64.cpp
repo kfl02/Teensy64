@@ -256,11 +256,12 @@ void yield(void) {
     running = 1;
 
     //Input via terminal to keyboardbuffer (for BASIC only)
-    if(Serial.available()) {
-        uint8_t r = Serial.read();
-        sendKey(r);
-        Serial.write(r);
-    }
+    // kfl02: Temporarily disabled. My Teensy64 seems to get random garbage on the serial line.
+//    if(Serial.available()) {
+//        uint8_t r = Serial.read();
+//        sendKey(r);
+//        Serial.write(r);
+//    }
 
     do_sendString();
 

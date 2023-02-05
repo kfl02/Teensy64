@@ -38,14 +38,20 @@
 
 #include <Arduino.h>
 
+#define CIA2_PRA_VIC_BANK_MASK  0x03
+#define CIA2_PRA_TXD            0x04
+#define CIA2_PRA_IEC_ATN_OUT    0x08
+#define CIA2_PRA_IEC_CLK_OUT    0x10
+#define CIA2_PRA_IEC_DATA_OUT   0x20
+#define CIA2_PRA_IEC_CLK_IN     0x40
+#define CIA2_PRA_IEC_DATA_IN    0x80
+#define CIA2_PRA_IEC_OUT_MASK   (CIA2_PRA_IEC_ATN_OUT | CIA2_PRA_IEC_CLK_OUT | CIA2_PRA_IEC_DATA_OUT)
+#define CIA2_PRA_IEC_IN_MASK    (CIA2_PRA_IEC_CLK_IN | CIA2_PRA_IEC_DATA_IN)
+
 void cia2_clock(int clk) __attribute__ ((hot));
-
 void cia2_checkRTCAlarm() __attribute__ ((hot));
-
 void cia2_write(uint32_t address, uint8_t value) __attribute__ ((hot));
-
 uint8_t cia2_read(uint32_t address) __attribute__ ((hot));
-
 void resetCia2(void);
 
 #endif

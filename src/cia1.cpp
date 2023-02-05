@@ -35,18 +35,14 @@
 
 #include "cpu.h"
 
+#include "cia.h"
 #include "cia1.h"
 
-#define DEBUGCIA1 0
-#define RTCDEBUG 0
-
-#define decToBcd(x) ( ( (uint8_t) (x) / 10 * 16) | ((uint8_t) (x) % 10) )
-#define bcdToDec(x) ( ( (uint8_t) (x) / 16 * 10) | ((uint8_t) (x) % 16) )
 #define tod()       (cpu.cia1.TODfrozen ? cpu.cia1.TODfrozenMillis : (int)( (millis() - cpu.cia1.TOD) % 86400000l) )
 
 void cia1_setAlarmTime() {
-    cpu.cia1.TODAlarm = (cpu.cia1.W[0x08] + cpu.cia1.W[0x09] * 10l + cpu.cia1.W[0x0A] * 600l +
-                         cpu.cia1.W[0x0B] * 36000l
+    cpu.cia1.TODAlarm = (cpu.cia1.W[CIA_TOD10THS] + cpu.cia1.W[CIA_TODSEC] * 10l + cpu.cia1.W[CIA_TODMIN] * 600l +
+                         cpu.cia1.W[CIA_TODHR] * 36000l
     );
 }
 
@@ -55,142 +51,116 @@ void cia1_write(uint32_t address, uint8_t value) {
     address &= 0x0F;
 
     switch(address) {
-        case 0x04 : {
-            cpu.cia1.W[address] = value;
-        };
-            break; //Timer A LO
-        case 0x05 : {
-            cpu.cia1.W[address] = value;
-            if((cpu.cia1.R[0x0E] & 0x01) == 0) {cpu.cia1.R[address] = value; }
-        };
-            break;//Timer A HI
-        case 0x06 : {
-            cpu.cia1.W[address] = value;
-        };
-            break; //Timer B LO
-        case 0x07 : {
-            cpu.cia1.W[address] = value;
-            if((cpu.cia1.R[0x0F] & 0x01) == 0) { cpu.cia1.R[address] = value; }
-        };
-            break; //Timer B HI
+        case CIA_TALO:
+            cpu.cia1.W[CIA_TALO] = value;
+            break;
 
-            //RTC
-        case 0x08 : {
-            if((cpu.cia1.R[0x0f] & 0x80) > 0) {
-                value &= 0x0f;
-                cpu.cia1.W[address] = value;
+        case CIA_TAHI:
+            cpu.cia1.W[CIA_TAHI] = value;
+
+            if((cpu.cia1.R[CIA_CRA] & CIA_CR_START) == 0) {
+                cpu.cia1.R[CIA_TAHI] = value;
+            }
+            break;
+
+        case CIA_TBLO:
+            cpu.cia1.W[CIA_TBLO] = value;
+            break;
+
+        case CIA_TBHI:
+            cpu.cia1.W[CIA_TBHI] = value;
+
+            if((cpu.cia1.R[CIA_CRB] & CIA_CR_START) == 0) {
+                cpu.cia1.R[CIA_TBHI] = value;
+            }
+            break;
+
+        case CIA_TOD10THS:
+            if((cpu.cia1.R[CIA_CRB] & CIA_CRB_ALARM) > 0) {
+                value &= CIA_TOD10THS_MASK;
+                cpu.cia1.W[CIA_TOD10THS] = value;
+
                 cia1_setAlarmTime();
-
-#if RTCDEBUG
-                Serial.print("CIA 1 Set Alarm TENTH:");
-                Serial.println(value,HEX);
-#endif
             } else {
-                value &= 0x0f;
+                value &= CIA_TOD10THS_MASK;
                 cpu.cia1.TODstopped = 0;
+
                 //Translate set Time to TOD:
                 cpu.cia1.TOD = (int) (millis() % 86400000l) -
-                               (value * 100 + cpu.cia1.R[0x09] * 1000l + cpu.cia1.R[0x0A] * 60000l +
-                                cpu.cia1.R[0x0B] * 3600000l
+                               (value * 100 + cpu.cia1.R[CIA_TODSEC] * 1000l + cpu.cia1.R[CIA_TODMIN] * 60000l +
+                                cpu.cia1.R[CIA_TODHR] * 3600000l
                                );
-#if RTCDEBUG
-                Serial.print("CIA 1 Set TENTH:");
-                Serial.println(value,HEX);
-                Serial.print("CIA 1 TOD (millis):");
-                Serial.println(cpu.cia1.TOD);
-#endif
             }
-        };
-            break; //TOD-Tenth
-        case 0x09 : {
-            if((cpu.cia1.R[0x0f] & 0x80) > 0) {
-                cpu.cia1.W[address] = bcdToDec(value);
-                cia1_setAlarmTime();
-#if RTCDEBUG
-                Serial.print("CIA 1 Set Alarm SEC:");
-                Serial.println(value,HEX);
-#endif
-            } else {
-                cpu.cia1.R[address] = bcdToDec(value);
-#if RTCDEBUG
-                Serial.print("CIA 1 Set SEC:");
-                Serial.println(value,HEX);
-#endif
-            }
-        };
-            break; //TOD-Secs
-        case 0x0A : {
-            if((cpu.cia1.R[0x0f] & 0x80) > 0) {
-                cpu.cia1.W[address] = bcdToDec(value);
-                cia1_setAlarmTime();
-#if RTCDEBUG
-                Serial.print("CIA 1 Set Alarm MIN:");
-                Serial.println(value,HEX);
-#endif
-            } else {
-                cpu.cia1.R[address] = bcdToDec(value);
-#if RTCDEBUG
-                Serial.print("CIA 1 Set MIN:");
-                Serial.println(value,HEX);
-#endif
-            }
-        };
-            break; //TOD-Minutes
-        case 0x0B : {
-            if((cpu.cia1.R[0x0f] & 0x80) > 0) {
-                cpu.cia1.W[address] = bcdToDec(value & 0x1f) + (value & 0x80 ? 12 : 0);
-                cia1_setAlarmTime();
-#if RTCDEBUG
-                Serial.print("CIA 1 Set Alarm HRS:");
-                Serial.println(value,HEX);
-#endif
-            } else {
-                cpu.cia1.R[address] = bcdToDec(value & 0x1f) + (value & 0x80 ? 12 : 0);
-                cpu.cia1.TODstopped = 1;
-#if RTCDEBUG
-                Serial.print("CIA 1 Set HRS:");
-                Serial.println(value,HEX);
-#endif
-            }
-        };
-            break; //TOD-Hours
+            break;
 
-        case 0x0C : {
-            cpu.cia1.R[address] = value;
-            //Fake IRQ
-            cpu.cia1.R[0x0d] |= 8 | ((cpu.cia1.W[0x0d] & 0x08) << 4);
-        };
-            break;
-        case 0x0D : {
-            if((value & 0x80) > 0) {
-                cpu.cia1.W[address] |= value & 0x1f;
-                //ggf IRQ triggern
-                if(cpu.cia1.R[address] & cpu.cia1.W[address] & 0x1f) {
-                    cpu.cia1.R[address] |= 0x80;
-                };
+        case CIA_TODSEC:
+            if((cpu.cia1.R[CIA_CRB] & CIA_CRB_ALARM) > 0) {
+                cpu.cia1.W[CIA_TODSEC] = bcdToDec(value);
+
+                cia1_setAlarmTime();
             } else {
-                cpu.cia1.W[address] &= ~value;
+                cpu.cia1.R[CIA_TODSEC] = bcdToDec(value);
             }
-        };
             break;
-        case 0x0E : {
-            cpu.cia1.R[address] = value & ~0x10;
-            if((value & 0x10) > 0) { cpu.cia1.R16[0x04 / 2] = cpu.cia1.W16[0x04 / 2]; }
-        };
+
+        case CIA_TODMIN:
+            if((cpu.cia1.R[CIA_CRB] & CIA_CRB_ALARM) > 0) {
+                cpu.cia1.W[CIA_TODMIN] = bcdToDec(value);
+
+                cia1_setAlarmTime();
+            } else {
+                cpu.cia1.R[CIA_TODMIN] = bcdToDec(value);
+            }
             break;
-        case 0x0F : {
-            cpu.cia1.R[address] = value & ~0x10;
-            if((value & 0x10) > 0) { cpu.cia1.R16[0x06 / 2] = cpu.cia1.W16[0x06 / 2]; }
-        };
+
+        case CIA_TODHR:
+            if((cpu.cia1.R[CIA_CRB] & CIA_CRB_ALARM) > 0) {
+                cpu.cia1.W[CIA_TODHR] = bcdToDec(value & CIA_TODHR_HR_MASK) + (value & CIA_TODHR_PM ? 12 : 0);
+
+                cia1_setAlarmTime();
+            } else {
+                cpu.cia1.R[CIA_TODHR] = bcdToDec(value & CIA_TODHR_HR_MASK) + (value & CIA_TODHR_PM ? 12 : 0);
+                cpu.cia1.TODstopped = 1;
+            }
             break;
-        default   : {
-            cpu.cia1.R[address] = value;/*if (address ==0) {Serial.print(value);Serial.print(" ");}*/ }
+
+        case CIA_SDR:
+            cpu.cia1.R[CIA_SDR] = value;
+            cpu.cia1.R[CIA_ICR] |= CIA_ICR_SP | (cpu.cia1.W[CIA_ICR] & CIA_ICR_SP ? CIA_ICR_IR : 0);
+            break;
+
+        case CIA_ICR:
+            if((value & 0x80) > 0) {
+                cpu.cia1.W[CIA_ICR] |= value & CIA_ICR_IRQ_MASK;
+
+                if(cpu.cia1.R[CIA_ICR] & cpu.cia1.W[CIA_ICR] & CIA_ICR_IRQ_MASK) {
+                    cpu.cia1.R[CIA_ICR] |= CIA_ICR_IR;
+                }
+            } else {
+                cpu.cia1.W[CIA_ICR] &= ~value;
+            }
+            break;
+
+        case CIA_CRA:
+            cpu.cia1.R[CIA_CRA] = value & ~CIA_CR_LOAD;
+
+            if(value & CIA_CR_LOAD) {
+                cpu.cia1.R16[CIA_TALO / 2] = cpu.cia1.W16[CIA_TALO / 2];
+            }
+            break;
+
+        case CIA_CRB:
+            cpu.cia1.R[CIA_CRB] = value & ~CIA_CR_LOAD;
+
+            if(value & CIA_CR_LOAD) {
+                cpu.cia1.R16[CIA_TBLO / 2] = cpu.cia1.W16[CIA_TBLO / 2];
+            }
+            break;
+
+        default:
+            cpu.cia1.R[address] = value;
             break;
     }
-
-#if DEBUGCIA1
-    if (cpu.pc < 0xa000) Serial.printf("%x CIA1: W %x %x\n", cpu.pc, address, value);
-#endif
 }
 
 uint8_t cia1_read(uint32_t address) {
@@ -199,73 +169,44 @@ uint8_t cia1_read(uint32_t address) {
     address &= 0x0F;
 
     switch(address) {
-        case 0x00: {
+        case CIA_PRA:
             ret = cia1PORTA();
-        };
             break;
-        case 0x01: {
+
+        case CIA_PRB:
             ret = cia1PORTB();
-        };
             break;
-            //RTC
-        case 0x08: {
+
+        case CIA_TOD10THS:
             ret = tod() % 1000 / 10;
             cpu.cia1.TODfrozen = 0;
-        };
+            break;
 
-#if RTCDEBUG
-            Serial.print("CIA 1 Read TENTH:");
-            Serial.println(ret,HEX);
-#endif
-
-            break;    //Bit 0..3: Zehntelsekunden im BCD-Format ($0-$9) Bit 4..7: immer 0
-        case 0x09: {
+        case CIA_TODSEC:
             ret = decToBcd(tod() / 1000 % 60);
-        };
-            //Serial.println( tod() / 100);
-#if RTCDEBUG
-            Serial.print("CIA 1 Read SEC:");
-            Serial.println(ret,HEX);
-#endif
+            break;
 
-            break;                //Bit 0..3: Einersekunden im BCD-Format ($0-$9) Bit 4..6: Zehnersekunden im BCD-Format ($0-$5) Bit 7: immer 0
-        case 0x0A: {
+        case CIA_TODMIN:
             ret = decToBcd(tod() / (1000 * 60) % 60);
-        };
-#if RTCDEBUG
-            Serial.print("CIA 1 Read MIN:");
-            Serial.println(ret,HEX);
-#endif
+            break;
 
-            break;        //Bit 0..3: Einerminuten im BCD-Format( $0-$9) Bit 4..6: Zehnerminuten im BCD-Format ($0-$5) Bit 7: immer 0
-        case 0x0B: {
-            //Bit 0..3: Einerstunden im BCD-Format ($0-$9) Bit 4: Zehnerstunden im BCD-Format ($0-$1) // Bit 7: Unterscheidung AM/PM, 0=AM, 1=PM
-            //Lesen aus diesem Register friert alle TOD-Register ein (TOD läuft aber weiter), bis Register 8 (TOD 10THS) gelesen wird.
+        case CIA_TODHR:
             cpu.cia1.TODfrozen = 0;
             cpu.cia1.TODfrozenMillis = tod();
             cpu.cia1.TODfrozen = 1;
-#if RTCDEBUG
-            Serial.print("CIA 1 FrozenMillis:");
-            Serial.println(cpu.cia1.TODfrozenMillis);
-#endif
+
             ret = cpu.cia1.TODfrozenMillis / (1000 * 3600) % 24;
+
             if(ret >= 12) {
                 ret = 128 | decToBcd(ret - 12);
             } else {
                 ret = decToBcd(ret);
             }
-        };
-#if RTCDEBUG
-            Serial.print("CIA 1 Read HRS:");
-            Serial.println(ret,HEX);
-#endif
-
             break;
 
-        case 0x0D: {
-            ret = cpu.cia1.R[address] & 0x9f;
-            cpu.cia1.R[address] = 0;
-        };
+        case CIA_ICR:
+            ret = cpu.cia1.R[CIA_ICR] & CIA_ICR_READ_MASK;
+            cpu.cia1.R[CIA_ICR] = 0;
             break;
 
         default:
@@ -273,9 +214,6 @@ uint8_t cia1_read(uint32_t address) {
             break;
     }
 
-#if DEBUGCIA1
-    if (cpu.pc < 0xa000) Serial.printf("%x CIA1: R %x %x\n", cpu.pc, address, ret);
-#endif
     return ret;
 }
 
@@ -285,55 +223,55 @@ void cia1_clock(int clk) {
     uint32_t cnta, cntb, cra, crb;
 
     //Timer A
-    cra = cpu.cia1.R[0x0e];
-    crb = cpu.cia1.R[0x0f];
+    cra = cpu.cia1.R[CIA_CRA];
+    crb = cpu.cia1.R[CIA_CRB];
 
     if (( cra & 0x21) == 0x01) {
-        cnta = cpu.cia1.R[0x04] | cpu.cia1.R[0x05] << 8;
+        cnta = cpu.cia1.R[CIA_TALO] | cpu.cia1.R[CIA_TAHI] << 8;
         cnta -= clk;
         if (cnta > 0xffff) { //Underflow
-            cnta = cpu.cia1.W[0x04] | cpu.cia1.W[0x05] << 8; // Reload Timer
+            cnta = cpu.cia1.W[CIA_TALO] | cpu.cia1.W[CIA_TAHI] << 8; // Reload Timer
             if (cra & 0x08) { // One Shot
-                cpu.cia1.R[0x0e] &= 0xfe; //Stop timer
+                cpu.cia1.R[CIA_CRA] &= 0xfe; //Stop timer
             }
 
             //Interrupt:
-            cpu.cia1.R[0x0d] |= 1 /*| (cpu.cia1.W[0x1a] & 0x01) */| ((cpu.cia1.W[0x0d] & 0x01) << 7);
+            cpu.cia1.R[CIA_ICR] |= 1 /*| (cpu.cia1.W[0x1a] & 0x01) */| ((cpu.cia1.W[CIA_ICR] & 0x01) << 7);
 
             if ((crb & 0x61)== 0x41) { //Timer B counts underflows of Timer A
-                cntb = cpu.cia1.R[0x06] | cpu.cia1.R[0x07] << 8;
+                cntb = cpu.cia1.R[CIA_TBLO] | cpu.cia1.R[CIA_TBHI] << 8;
                 cntb--;
                 if (cntb > 0xffff) { //underflow
-                    cpu.cia1.R[0x04] = cnta;
-                    cpu.cia1.R[0x05] = cnta >> 8;
+                    cpu.cia1.R[CIA_TALO] = cnta;
+                    cpu.cia1.R[CIA_TAHI] = cnta >> 8;
                     goto underflow_b;
                 }
             }
         }
 
-        cpu.cia1.R[0x04] = cnta;
-        cpu.cia1.R[0x05] = cnta >> 8;
+        cpu.cia1.R[CIA_TALO] = cnta;
+        cpu.cia1.R[CIA_TAHI] = cnta >> 8;
 
     }
 
     //Timer B
     if (( crb & 0x61) == 0x01) {
-        cntb = cpu.cia1.R[0x06] | cpu.cia1.R[0x07] << 8;
+        cntb = cpu.cia1.R[CIA_TBLO] | cpu.cia1.R[CIA_TBHI] << 8;
         cntb -= clk;
         if (cntb > 0xffff) { //underflow
 underflow_b:
-            cntb = cpu.cia1.W[0x06] | cpu.cia1.W[0x07] << 8; // Reload Timer
+            cntb = cpu.cia1.W[CIA_TBLO] | cpu.cia1.W[CIA_TBHI] << 8; // Reload Timer
             if (crb & 0x08) { // One Shot
-                cpu.cia1.R[0x0f] &= 0xfe; //Stop timer
+                cpu.cia1.R[CIA_CRB] &= 0xfe; //Stop timer
             }
 
             //Interrupt:
-            cpu.cia1.R[0x0d] |= 2 /*|  (cpu.cia1.W[0x1a] & 0x02) */ | ((cpu.cia1.W[0x0d] & 0x02) << 6);
+            cpu.cia1.R[CIA_ICR] |= 2 /*|  (cpu.cia1.W[0x1a] & 0x02) */ | ((cpu.cia1.W[CIA_ICR] & 0x02) << 6);
 
         }
 
-        cpu.cia1.R[0x06] = cntb;
-        cpu.cia1.R[0x07] = cntb >> 8;
+        cpu.cia1.R[CIA_TBLO] = cntb;
+        cpu.cia1.R[CIA_TBHI] = cntb >> 8;
 
     }
 }
@@ -342,31 +280,31 @@ underflow_b:
 void cia1_clock(int clk) {
 
     int32_t t;
-    uint32_t regFEDC = cpu.cia1.R32[0x0C / 4];
+    uint32_t regFEDC = cpu.cia1.R32[CIA_SDR / 4];
 
     // TIMER A
-    //if (((cpu.cia1.R[0x0E] & 0x01)>0) && ((cpu.cia1.R[0x0E] & 0x20)==0)) {
+    //if (((cpu.cia1.R[CIA_CRA] & 0x01)>0) && ((cpu.cia1.R[CIA_CRA] & 0x20)==0)) {
 
     //if ((regFEDC & 0x210000)==0x10000) {
     if(((regFEDC >> 16) & 0x21) == 0x1) {
-        t = cpu.cia1.R16[0x04 / 2];
+        t = cpu.cia1.R16[CIA_TALO / 2];
 
         if(clk > t) { //underflow ?
-            t = cpu.cia1.W16[0x04 / 2] - (clk - t);
+            t = cpu.cia1.W16[CIA_TALO / 2] - (clk - t);
             regFEDC |= 0x00000100;
             if((regFEDC & 0x00080000)) { regFEDC &= 0xfffeffff; } //One-Shot
         } else {
             t -= clk;
         }
 
-        cpu.cia1.R16[0x04 / 2] = t;
+        cpu.cia1.R16[CIA_TALO / 2] = t;
     }
 
 
     // TIMER B
-    //TODO : Prüfen ob das funktioniert
+    //TODO: Prüfen ob das funktioniert
     if(regFEDC & 0x01000000) {
-        //uint16_t quelle = (cpu.cia1.R[0x0F]>>5) & 0x03;
+        //uint16_t quelle = (cpu.cia1.R[CIA_CRB]>>5) & 0x03;
         if((regFEDC & 0x60000000) == 0x40000000) {
 
             if(regFEDC & 0x00000100) { //unterlauf TimerA?
@@ -376,16 +314,16 @@ void cia1_clock(int clk) {
             }
         }
 
-        t = cpu.cia1.R16[0x06 / 2];
+        t = cpu.cia1.R16[CIA_TBLO / 2];
 
         if(clk > t) { //underflow ?
-            t = cpu.cia1.W16[0x06 / 2] - (clk - t);
+            t = cpu.cia1.W16[CIA_TBLO / 2] - (clk - t);
             regFEDC |= 0x00000200;
             if((regFEDC & 0x08000000)) { regFEDC &= 0xfeffffff; }
         } else {
             t -= clk;
         }
-        cpu.cia1.R16[0x06 / 2] = t; //One-Shot
+        cpu.cia1.R16[CIA_TBLO / 2] = t; //One-Shot
 
     }
 
@@ -393,37 +331,34 @@ void cia1_clock(int clk) {
 
 
     // INTERRUPT ?
-    if(regFEDC & cpu.cia1.W32[0x0C / 4] & 0x0f00) {
+    if(regFEDC & cpu.cia1.W32[CIA_SDR / 4] & 0x0f00) {
         regFEDC |= 0x8000;
-        cpu.cia1.R32[0x0C / 4] = regFEDC;
-    } else { cpu.cia1.R32[0x0C / 4] = regFEDC; }
+        cpu.cia1.R32[CIA_SDR / 4] = regFEDC;
+    } else { cpu.cia1.R32[CIA_SDR / 4] = regFEDC; }
 }
 
 #endif
 
 void cia1_checkRTCAlarm() { // call @ 1/10 sec interval minimum
-
-    if((int) (millis() - cpu.cia1.TOD) % 86400000l / 100 == cpu.cia1.TODAlarm) {
-        //Serial.print("CIA1 RTC interrupt");
-        cpu.cia1.R[13] |= 0x4 | ((cpu.cia1.W[13] & 4) << 5);
+    if((uint32_t) (millis() - cpu.cia1.TOD) % 86400000l / 100 == cpu.cia1.TODAlarm) {
+        cpu.cia1.R[CIA_ICR] |= CIA_ICR_ALRM | (cpu.cia1.W[CIA_ICR] & CIA_ICR_ALRM ? CIA_ICR_IR : 0);
     }
 }
 
-void cia1FLAG(void) {
-    //Serial.println("CIA1 FLAG interrupt");
-    cpu.cia1.R[13] |= 0x10 | ((cpu.cia1.W[13] & 0x10) << 3);
+void cia1FLAG() {
+    cpu.cia1.R[CIA_ICR] |= CIA_ICR_FLG | (cpu.cia1.W[CIA_ICR] & CIA_ICR_FLG ? CIA_ICR_IR : 0);
 }
 
-void resetCia1(void) {
-
+void resetCia1() {
     initJoysticks();
     initKeyboard();
 
     memset((uint8_t * ) & cpu.cia1.R, 0, sizeof(cpu.cia1.R));
-    cpu.cia1.W[0x04] = cpu.cia1.R[0x04] = 0xff;
-    cpu.cia1.W[0x05] = cpu.cia1.R[0x05] = 0xff;
-    cpu.cia1.W[0x06] = cpu.cia1.R[0x06] = 0xff;
-    cpu.cia1.W[0x07] = cpu.cia1.R[0x07] = 0xff;
+
+    cpu.cia1.W[CIA_TALO] = cpu.cia1.R[CIA_TALO] = 0xff;
+    cpu.cia1.W[CIA_TAHI] = cpu.cia1.R[CIA_TAHI] = 0xff;
+    cpu.cia1.W[CIA_TBLO] = cpu.cia1.R[CIA_TBLO] = 0xff;
+    cpu.cia1.W[CIA_TBHI] = cpu.cia1.R[CIA_TBHI] = 0xff;
 
     //FLAG pin CIA1 - Serial SRQ (input only)
     pinMode(PIN_SERIAL_SRQ, OUTPUT_OPENDRAIN);

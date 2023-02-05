@@ -3,6 +3,19 @@
 
 #include <Arduino.h>
 
+// Joystick bits for both ports
+#define CIA1_PR_JOY_UP      0x01
+#define CIA1_PR_JOY_DOWN    0x02
+#define CIA1_PR_JOY_LEFT    0x04
+#define CIA1_PR_JOY_RIGHT   0x08
+#define CIA1_PR_JOY_BTN     0x10
+
+// TODO: Paddles
+
+// Lightpen
+#define CIA1_PRB_LP 0x10
+
+
 struct tcia {
     union {
         uint8_t R[0x10];
@@ -14,9 +27,9 @@ struct tcia {
         uint16_t W16[0x10 / 2];
         uint32_t W32[0x10 / 4];
     };
-    int32_t TOD;
-    int32_t TODfrozenMillis;
-    int32_t TODAlarm;
+    uint32_t TOD;
+    uint32_t TODfrozenMillis;
+    uint32_t TODAlarm;
     uint8_t TODstopped;
     uint8_t TODfrozen;
 };

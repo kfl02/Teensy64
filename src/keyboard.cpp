@@ -37,6 +37,7 @@
 #include "keyboard.h"
 
 #include "keyboard_usb.h"
+#include "cia.h"
 
 USBHost myusb;
 
@@ -68,8 +69,6 @@ void sendKey(char key) {
     cpu.RAM[198] = 1;
 
     interrupts();
-
-    return;
 }
 
 void do_sendString() {
@@ -93,9 +92,9 @@ void sendString(const char *p) {
     Serial.println(p);
 }
 
-static int hotkey(char ch) {
+static bool hotkey(char ch) {
     if(_sendString != nullptr) {
-        return 1;
+        return true;
     }
 
     unsigned i = 0;
@@ -103,13 +102,13 @@ static int hotkey(char ch) {
     while(hotkeys[i] != nullptr) {
         if(*hotkeys[i] == ch) {
             sendString(hotkeys[i] + 1);
-            return 1;
+            return true;
         }
 
         i++;
     }
 
-    return 0;
+    return false;
 }
 
 /*******************************************************************************************************************/
@@ -184,7 +183,7 @@ struct {
     };
     uint32_t lastkv;
     uint8_t shiftLock;
-} kbdData = { 0, 0, 0 };
+} kbdData = { {0}, 0, 0 };
 
 
 /*
@@ -197,28 +196,28 @@ struct {
         Werden Nullen bei den Eingangs-Portbits PB0-PB7/$DC01 festgestellt (KERNAL $EAAB), so sind die entsprechende(n) Taste(n) gedrückt.
 */
 
-uint8_t cia1PORTA(void) {
+uint8_t cia1PORTA() {
     uint8_t v;
 
-    v = ~cpu.cia1.R[0x02] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]);
+    v = ~cpu.cia1.R[CIA_DDRA] | (cpu.cia1.R[CIA_PRA] & cpu.cia1.R[CIA_DDRA]);
 
     if(!cpu.swapJoysticks) {
-        if(gpioRead(PIN_JOY2_1) == 0) { v &= 0xFE; }
-        if(gpioRead(PIN_JOY2_2) == 0) { v &= 0xFD; }
-        if(gpioRead(PIN_JOY2_3) == 0) { v &= 0xFB; }
-        if(gpioRead(PIN_JOY2_4) == 0) { v &= 0xF7; }
-        if(gpioRead(PIN_JOY2_BTN) == 0) { v &= 0xEF; }
+        if(gpioRead(PIN_JOY2_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(gpioRead(PIN_JOY2_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(gpioRead(PIN_JOY2_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(gpioRead(PIN_JOY2_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(gpioRead(PIN_JOY2_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     } else {
-        if(gpioRead(PIN_JOY1_1) == 0) { v &= 0xFE; }
-        if(gpioRead(PIN_JOY1_2) == 0) { v &= 0xFD; }
-        if(gpioRead(PIN_JOY1_3) == 0) { v &= 0xFB; }
-        if(gpioRead(PIN_JOY1_4) == 0) { v &= 0xF7; }
-        if(gpioRead(PIN_JOY1_BTN) == 0) { v &= 0xEF; }
+        if(gpioRead(PIN_JOY1_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(gpioRead(PIN_JOY1_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(gpioRead(PIN_JOY1_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(gpioRead(PIN_JOY1_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(gpioRead(PIN_JOY1_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     }
 
     if(!kbdData.kv) { return v; } //Keine Taste gedrückt
 
-    uint8_t filter = ~cpu.cia1.R[0x01] & cpu.cia1.R[0x03];
+    uint8_t filter = ~cpu.cia1.R[CIA_PRB] & cpu.cia1.R[CIA_DDRB];
 
     if(kbdData.k) {
         if(keymatrixmap[1][kbdData.k] & filter) { v &= ~keymatrixmap[0][kbdData.k]; }
@@ -243,23 +242,23 @@ uint8_t cia1PORTA(void) {
 }
 
 
-uint8_t cia1PORTB(void) {
+uint8_t cia1PORTB() {
     uint8_t v;
 
     v = ~cpu.cia1.R[0x03] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]);
 
     if(!cpu.swapJoysticks) {
-        if(gpioRead(PIN_JOY1_1) == 0) { v &= 0xFE; }
-        if(gpioRead(PIN_JOY1_2) == 0) { v &= 0xFD; }
-        if(gpioRead(PIN_JOY1_3) == 0) { v &= 0xFB; }
-        if(gpioRead(PIN_JOY1_4) == 0) { v &= 0xF7; }
-        if(gpioRead(PIN_JOY1_BTN) == 0) { v &= 0xEF; }
+        if(gpioRead(PIN_JOY1_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(gpioRead(PIN_JOY1_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(gpioRead(PIN_JOY1_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(gpioRead(PIN_JOY1_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(gpioRead(PIN_JOY1_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     } else {
-        if(gpioRead(PIN_JOY2_1) == 0) { v &= 0xFE; }
-        if(gpioRead(PIN_JOY2_2) == 0) { v &= 0xFD; }
-        if(gpioRead(PIN_JOY2_3) == 0) { v &= 0xFB; }
-        if(gpioRead(PIN_JOY2_4) == 0) { v &= 0xF7; }
-        if(gpioRead(PIN_JOY2_BTN) == 0) { v &= 0xEF; }
+        if(gpioRead(PIN_JOY2_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(gpioRead(PIN_JOY2_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(gpioRead(PIN_JOY2_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(gpioRead(PIN_JOY2_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(gpioRead(PIN_JOY2_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     }
 
     if(!kbdData.kv) { return v; } //Keine Taste gedrückt
@@ -334,9 +333,9 @@ void usbKeyboardmatrix(void *keys) { //Interrupt
             return;
         } else if(kbdData.ke == 0x10) {
             if(kbdData.k == 0x52) { //volume up
-                if(audioout.volume > 4) { audioout.volume--; } //volume is a bit-shift right
+                if(AudioOutputAnalog::volume > 4) { AudioOutputAnalog::volume--; } //volume is a bit-shift right
             } else if(kbdData.k == 0x51) { //volume down
-                if(audioout.volume < 16) { audioout.volume++; } //volume is a bit-shift right
+                if(AudioOutputAnalog::volume < 16) { AudioOutputAnalog::volume++; } //volume is a bit-shift right
             }
         }
 
