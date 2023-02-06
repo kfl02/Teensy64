@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef _ILI9341_t3_font_PlayBold
-#define _ILI9341_t3_font_PlayBold
+#ifndef TEENSY64_FONT_PLAY_BOLD_H
+#define TEENSY64_FONT_PLAY_BOLD_H
 
 #include "ILI9341_fonts.h"
 

@@ -48,13 +48,12 @@ AudioConnection patchCord1(playSID, 0, audioout, 0);
 
 
 SdFat SD;
-uint8_t SDinitialized = 0;
+bool SDinitialized = false;
 
 
 void resetMachine() {
     *(volatile uint32_t *) 0xE000ED0C = 0x5FA0004;
-    while(true) { ;
-    }
+    while(true) {}
 }
 
 void resetExternal() {
@@ -67,7 +66,7 @@ void resetExternal() {
 }
 
 
-void oneRasterLine(void) {
+void oneRasterLine() {
     static unsigned short lc = 1;
 
     while(true) {
@@ -98,7 +97,7 @@ void oneRasterLine(void) {
 
 DMAChannel dma_gpio(false);
 
-void setupGPIO_DMA(void) {
+void setupGPIO_DMA() {
     dma_gpio.begin(true);
 
     dma_gpio.TCD->CSR = 0;
@@ -179,8 +178,7 @@ void initMachine() {
 
     delay(250);
 
-    while(!Serial && ((millis() - m) <= 1500)) { ;
-    }
+    while(!Serial && ((millis() - m) <= 1500)) {}
 
     LED_OFF;
 
@@ -268,5 +266,5 @@ void yield(void) {
     myusb.Task();
 
     running = 0;
-};
+}
 

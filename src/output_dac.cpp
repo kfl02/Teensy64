@@ -26,7 +26,6 @@
 
 #include <cstdint>
 #include "output_dac.h"
-#include "Teensy64.h"
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
 
@@ -72,7 +71,7 @@ bool AudioOutputAnalog::update_responsibility = false;
 DMAChannel AudioOutputAnalog::dma(false);
 uint8_t AudioOutputAnalog::volume;
 
-void AudioOutputAnalog::begin(void) {
+void AudioOutputAnalog::begin() {
     SIM_SCGC2 |= SIM_SCGC2_DAC0;
     DAC0_C0 = DAC_C0_DACEN;                   // 1.2V VDDA is DACREF_2
 
@@ -130,7 +129,7 @@ void AudioOutputAnalog::analogReference(int ref) {
 }
 
 
-void AudioOutputAnalog::update(void) {
+void AudioOutputAnalog::update() {
     audio_block_t *block;
     block = receiveReadOnly(0); // input 0
     if(block) {
@@ -159,7 +158,7 @@ void AudioOutputAnalog::update(void) {
 // TODO: the DAC has much higher bandwidth than the datasheet says
 // can we output a 2X oversampled output, for easier filtering?
 
-void AudioOutputAnalog::isr(void) {
+void AudioOutputAnalog::isr() {
     const int16_t *src, *end;
     int16_t *dest;
     audio_block_t *block;

@@ -37,7 +37,6 @@
 #include "cpu.h"
 
 #include "pla.h"
-#include "vic.h"
 #include "cia1.h"
 #include "cia2.h"
 
@@ -67,7 +66,7 @@ uint8_t r_sid(uint32_t address) {
 }
 
 uint8_t r_col(uint32_t address) {
-    return cpu.vic.COLORRAM[address & 0x3FF];
+    return cpu.vic.colorRAM[address & 0x3FF];
 }
 
 uint8_t r_cia1(uint32_t address) {
@@ -110,7 +109,7 @@ void w_vic(uint32_t address, uint8_t value) {
 }
 
 void w_col(uint32_t address, uint8_t value) {
-    cpu.vic.COLORRAM[address & 0x3FF] = value & 0x0F;
+    cpu.vic.colorRAM[address & 0x3FF] = value & 0x0F;
 }
 
 void w_sid(uint32_t address, uint8_t value) {
@@ -1136,8 +1135,7 @@ rarray_t PLA_READ_CARTRIGE_01[8] = {
 };
 
 
-void resetPLA(void) {
-
+void resetPLA() {
     // Initialize RAM
     unsigned i = 0;
     const char pattern1 = 0x00;
@@ -1149,7 +1147,7 @@ void resetPLA(void) {
         i += patternLength;
         memset(&cpu.RAM[i], pattern2, patternLength);
         i += patternLength;
-    };
+    }
 
     cpu.RAM[0] = 0x2F;
     cpu.RAM[1] = 0x1F;

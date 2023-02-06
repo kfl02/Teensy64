@@ -33,8 +33,10 @@
 		
 */
 
-#ifndef Teensy64_cia2_h_
-#define Teensy64_cia2_h_
+#pragma once
+
+#ifndef TEENSY64_CIA2_H
+#define TEENSY64_CIA2_H
 
 #include <Arduino.h>
 

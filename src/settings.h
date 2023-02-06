@@ -33,6 +33,8 @@
 
 */
 
+#pragma once
+
 #ifndef TEENSY64_SETTINGS_H
 #define TEENSY64_SETTINGS_H
 

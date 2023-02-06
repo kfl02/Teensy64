@@ -34,35 +34,32 @@ Copyright Frank Bösing, 2017
 */
 #include <Arduino.h>
 #include "util.h"
-#include "Teensy64.h"
 
 //Attention, don't use WFI-instruction - the CPU does not count cycles during sleep
-void enableCycleCounter(void) {
+void enableCycleCounter() {
     ARM_DEMCR |= ARM_DEMCR_TRCENA;
     ARM_DWT_CTRL |= ARM_DWT_CTRL_CYCCNTENA;
 }
 
-extern "C" volatile uint32_t systick_millis_count;
+extern "C"
 
-void mySystick_isr(void) {
-    systick_millis_count++;
-}
+void systick_isr();
+void unused_isr() {}
 
-void myUnused_isr(void) {
-};
-
-void disableEventResponder(void) {
-    _VectorsRam[14] = myUnused_isr;  // pendablesrvreq
-    _VectorsRam[15] = mySystick_isr; // Short Systick
+void disableEventResponder() {
+    _VectorsRam[14] = unused_isr;  // pendablesrvreq
+    _VectorsRam[15] = systick_isr; // Short Systick
 }
 
 #define PDB_CONFIG (PDB_SC_TRGSEL(15) | PDB_SC_PDBEN | PDB_SC_CONT | PDB_SC_PDBIE | PDB_SC_DMAEN)
 
-static float setDACFreq(float freq) {
-
-    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return 0; }
+float setAudioSampleFreq(float freq) {
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) {
+        return 0.0f;
+    }
 
     unsigned int t = (float) F_BUS / freq - 0.5f;
+
     PDB0_SC = 0;
     PDB0_IDLY = 1;
     PDB0_MOD = t;
@@ -73,14 +70,10 @@ static float setDACFreq(float freq) {
     return (float) F_BUS / t;
 }
 
-float setAudioSampleFreq(float freq) {
-    int f;
-    f = setDACFreq(freq);
-    return f;
-}
-
-void setAudioOff(void) {
-    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return; }
+void setAudioOff() {
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) {
+        return;
+    }
 
     PDB0_SC = 0;
 
@@ -89,8 +82,10 @@ void setAudioOff(void) {
     //NVIC_DISABLE_IRQ(IRQ_USBHS);
 }
 
-void setAudioOn(void) {
-    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) { return; }
+void setAudioOn() {
+    if(!(SIM_SCGC6 & SIM_SCGC6_PDB)) {
+        return;
+    }
 
     PDB0_SC = PDB_CONFIG | PDB_SC_LDOK;
     PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
@@ -101,7 +96,6 @@ void setAudioOn(void) {
 }
 
 void listInterrupts() {
-
 #if defined(__MK66FX1M0__)
     const char isrName[][24] = {
         //NMI
@@ -124,7 +118,7 @@ void listInterrupts() {
 #endif
 
     //unsigned adrFaultNMI = (unsigned)_VectorsRam[3];
-    unsigned adrUnusedInt = (unsigned) _VectorsRam[IRQ_FTFL_COLLISION + 16];//IRQ_FTFL_COLLISION is normally unused
+    auto adrUnusedInt = (unsigned) _VectorsRam[IRQ_FTFL_COLLISION + 16];//IRQ_FTFL_COLLISION is normally unused
     unsigned adr;
 
     Serial.println("Interrupts in use:");

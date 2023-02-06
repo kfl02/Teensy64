@@ -35,8 +35,8 @@
 
 #pragma once
 
-#ifndef TEENSY64_CIA_H
-#define TEENSY64_CIA_H
+#ifndef TEENSY64_CIA6526_H
+#define TEENSY64_CIA6526_H
 
 #include <cstdint>
 
@@ -161,8 +161,6 @@ protected:
     };
     union {
         uint8_t W[CIA_NUMREGS];
-        uint16_t W16[CIA_NUMREGS / 2];
-        uint32_t W32[CIA_NUMREGS / 4];
         struct {
             uint8_t pra;
             uint8_t prb;
@@ -206,7 +204,7 @@ public:
     void checkRTCAlarm() __attribute__ ((hot));
     virtual void write(uint32_t address, uint8_t value) __attribute__ ((hot));
     virtual uint8_t read(uint32_t address) __attribute__ ((hot));
-    void reset(void);
+    void reset();
 };
 
-#endif //TEENSY64_CIA_H
+#endif //TEENSY64_CIA6526_H

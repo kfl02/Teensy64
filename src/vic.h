@@ -114,7 +114,7 @@ struct tsprite {
 
 #define VIC_CR1_YSCROLL_MASK    0x07
 #define VIC_CR1_RSEL            0x08
-#define VIC_CR1_DEN             ßx10
+#define VIC_CR1_DEN             0x10
 #define VIC_CR1_BMM             0x20
 #define VIC_CR1_ECM             0x40
 #define VIC_CR1_RST8            0x80
@@ -163,8 +163,8 @@ struct tsprite {
 
 struct tvic {
     uint32_t timeStart, neededTime;
-    int intRasterLine; //Interruptsetting
-    int rasterLine;
+    uint16_t intRasterLine;
+    uint16_t rasterLine;
     uint16_t bank;
     uint16_t vcbase;
     uint8_t rc;
@@ -176,9 +176,9 @@ struct tvic {
     uint8_t badline;
     uint8_t BAsignal;
     uint8_t lineHasSprites;
-    int8_t spriteCycles0_2;
-    int8_t spriteCycles3_7;
-    int fgcollision;
+    uint8_t spriteCycles0_2;
+    uint8_t spriteCycles3_7;
+    uint8_t fgcollision;
 
     uint8_t *charsetPtrBase;
     uint8_t *charsetPtr;
@@ -233,7 +233,7 @@ struct tvic {
 
     uint8_t lineMemChr[40];
     uint8_t lineMemCol[40];
-    uint8_t COLORRAM[1024];
+    uint8_t colorRAM[1024];
 
     static void render(void);
     static void renderSimple(void);

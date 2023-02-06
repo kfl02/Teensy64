@@ -64,7 +64,7 @@ typedef void (*w_ptr_t)(uint32_t, uint8_t);
 typedef w_ptr_t warray_t[256];
 typedef warray_t *w_rarr_ptr_t;
 
-void resetPLA(void);
+void resetPLA();
 
 #endif // TEENSY64_PLA_H
 

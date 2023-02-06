@@ -33,17 +33,9 @@
 
 */
 
+#include <Arduino.h>
 #include <cstring>
-#include "cia.h"
-#include "cpu.h"
-
-//static inline uint8_t decToBcd(uint8_t x) {
-//    return ( ( (uint8_t) (x) / 10 * 16) | ((uint8_t) (x) % 10) );
-//}
-//
-//static inline uint8_t bcdToDec(uint8_t x) {
-//    return ( ( (uint8_t) (x) / 16 * 10) | ((uint8_t) (x) % 16) );
-//}
+#include "cia6526.h"
 
 inline uint32_t CIA6526::tod() const {
     return TODfrozen ? TODfrozenMillis : (uint32_t)( (millis() - TOD) % DAY_IN_MILLISECONDS);
@@ -57,12 +49,6 @@ void CIA6526::write(uint32_t address, uint8_t value) {
     address &= 0x0F;
 
     switch(address) {
-        // cases that differ for CIA 1 & 2:
-        // 0x00/CIA_PRA: CIA2 - bits 0..2 trigger VIC, bits 3..5 trigger exact timing
-        // 0x01/CIA_PRB: CIA2 - user port, not used
-        // 0x0c/CIA_SDR: CIA2 - can set CIA_ICR_IR and thus trigger an NMI
-        // 0x0d/CIA_ICR: CIA2 - CIA_ICR_IR triggers NMI, can be set via CIA_SDR
-
         case CIA_TALO:
         case CIA_TBLO:
             W[address] = value;
@@ -182,12 +168,6 @@ uint8_t CIA6526::read(uint32_t address) {
     address &= 0x0f;
 
     switch(address) {
-        // cases that differ for CIA 1 & 2:
-        // 0x00/CIA_PRA: CIA 1 - keyboard matrix columns, joystick port 2, paddles
-        //               CIA 2 - VIC bank, RS232, IEC
-        // 0x01/CIA_PRB: CIA 2 - user port, RS232
-        // 0x0d/CIA_ICR: CIA 2 - clear NMI
-
         case CIA_TOD10THS:
             ret = tod() % 1000 / 10;
             TODfrozen = true;
@@ -272,6 +252,8 @@ void CIA6526::clock(int clk) {
         } else {
             t -= clk;
         }
+
+        r.tb = t;
     }
 
 skip:
@@ -292,12 +274,7 @@ void CIA6526::checkRTCAlarm() {
 }
 
 void CIA6526::reset() {
-    // CIA 1: init joysticks and keyboard
-
     memset(R, 0, sizeof(R));
 
     r.ta = r.tb = 0xffff;
-
-    // CIA 1: init SRQ pin
-    // CIA 2: init IEC pins
 }

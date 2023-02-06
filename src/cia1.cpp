@@ -35,7 +35,7 @@
 
 #include "cpu.h"
 
-#include "cia.h"
+#include "cia6526.h"
 #include "cia1.h"
 
 #define tod()       (cpu.cia1.TODfrozen ? cpu.cia1.TODfrozenMillis : (int)( (millis() - cpu.cia1.TOD) % 86400000l) )

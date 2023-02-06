@@ -38,32 +38,37 @@ Copyright Frank Bösing, 2017
 #ifndef TEENSY64_UTIL_H
 #define TEENSY64_UTIL_H
 
-#define AudioNoInterrupts() (NVIC_DISABLE_IRQ(IRQ_SOFTWARE))
-#define AudioInterrupts()   (NVIC_ENABLE_IRQ(IRQ_SOFTWARE))
-
-void disableEventResponder(void);
-void enableCycleCounter(void);
-
-inline unsigned fbmillis(void)  __attribute__((always_inline));
-inline unsigned fbmicros(void)  __attribute__((always_inline));
-inline unsigned fbnanos(void) __attribute__((always_inline));
-
-
-unsigned fbmillis(void) {
-    return (ARM_DWT_CYCCNT * (1000.0 / F_CPU));
+inline void AudioNoInterrupts() __attribute__((always_inline));
+inline void AudioNoInterrupts() {
+    NVIC_DISABLE_IRQ(IRQ_SOFTWARE);
 }
 
-unsigned fbmicros(void) {
-    return (ARM_DWT_CYCCNT * (1000000.0 / F_CPU));
+inline void AudioInterrupts() __attribute__((always_inline));
+inline void AudioInterrupts() {
+    NVIC_ENABLE_IRQ(IRQ_SOFTWARE);
 }
 
-unsigned fbnanos(void) {
-    return (ARM_DWT_CYCCNT * (1000000000.0 / F_CPU));
+void disableEventResponder();
+void enableCycleCounter();
+
+inline uint32_t cycleCountMillis() __attribute__((always_inline));
+inline uint32_t cycleCountMillis() {
+    return (uint32_t)(ARM_DWT_CYCCNT * (1000.0 / F_CPU));
+}
+
+inline uint32_t cycleCountMicros() __attribute__((always_inline));
+inline uint32_t cycleCountMicros() {
+    return (uint32_t)(ARM_DWT_CYCCNT * (1000000.0 / F_CPU));
+}
+
+inline uint32_t cycleCountNanos() __attribute__((always_inline));
+inline uint32_t cycleCountNanos() {
+    return (uint32_t)(ARM_DWT_CYCCNT * (1000000000.0 / F_CPU));
 }
 
 float setAudioSampleFreq(float freq);
-void setAudioOff(void);
-void setAudioOn(void);
+void setAudioOff();
+void setAudioOn();
 void listInterrupts();
 
 #endif // TEENSY64_UTIL_H

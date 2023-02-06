@@ -37,7 +37,7 @@
 #include "keyboard.h"
 
 #include "keyboard_usb.h"
-#include "cia.h"
+#include "cia6526.h"
 
 USBHost myusb;
 

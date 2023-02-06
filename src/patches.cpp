@@ -35,18 +35,16 @@
 
 #include "patches.h"
 
-#define DIRECTORY "/C64/\0"
-//#define DIRECTORY "/C64/TESTS/\0"
+#include <cmath>
 
-extern uint8_t SDinitialized;
+#define DIRECTORY "/C64/\0"
+
 static FsFile file;
 static FsFile entry;
 static char filename[64];
 static char buffer[2];
 
-
-void patchLOAD(void) {
-
+void patchLOAD() {
     int device;
     int secondaryAddress;
     uint16_t addr, size;
@@ -57,7 +55,7 @@ void patchLOAD(void) {
         //Jump to unpatched original address:
         cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];
         return;
-    };
+    }
 
     if(!SDinitialized) {
         cpu.pc = 0xF707; //Device not present error
@@ -104,7 +102,7 @@ void patchLOAD(void) {
                 cpu.RAM[addr++] = (start + 32) >> 8;
 
                 //# of blocks
-                blocks = ceil((float) entry.size() / 256.0f);
+                blocks = std::ceil((float) entry.size() / 256.0f);
                 cpu.RAM[addr++] = blocks & 0xff;
                 cpu.RAM[addr++] = blocks >> 8;
 
@@ -153,7 +151,7 @@ void patchLOAD(void) {
                 while(len < 4) {
                     strcat(filename, " ");
                     len++;
-                };
+                }
                 strcat(filename, "\"");
                 char nbuf[18] = {0};
                 entry.getName(nbuf, 17);
@@ -164,7 +162,7 @@ void patchLOAD(void) {
                 while(len < 18 + 4) {
                     strcat(filename, " ");
                     len++;
-                };
+                }
                 strcat(filename, " PRG   ");
                 Serial.println(filename);
             }
@@ -177,7 +175,7 @@ void patchLOAD(void) {
         cpu.RAM[addr++] = (start + 32) & 0xff;
         cpu.RAM[addr++] = (start + 32) >> 8;
         //# of blocks. todo : determine free space on sd card
-        blocks = 65535;
+        blocks = 65535; // This makes the following if conditions always false
         cpu.RAM[addr++] = blocks & 0xff;
         cpu.RAM[addr++] = blocks >> 8;
         if(blocks < 100) { cpu.RAM[addr++] = ' '; }
@@ -231,10 +229,9 @@ void patchLOAD(void) {
     cpu.y = 0x49; //Offset for "LOADING"
     cpu.pc = 0xF12B; //Print and return
     Serial.println("loaded.");
-    return;
 }
 
-void patchSAVE(void) {
+void patchSAVE() {
     int device;
     int secondaryAddress;
     uint16_t addr, size;
@@ -245,7 +242,7 @@ void patchSAVE(void) {
         //Jump to unpatched original address:
         cpu.pc = rom_kernal[cpu.pc - 0xe000 + 1] * 256 + rom_kernal[cpu.pc - 0xe000];
         return;
-    };
+    }
 
     if(!SDinitialized) {
         cpu.pc = 0xF707; //Device not present error
@@ -303,5 +300,4 @@ void patchSAVE(void) {
     }
 
     Serial.println("saved.");
-    return;
 }

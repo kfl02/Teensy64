@@ -37,44 +37,41 @@
 
 #define PALETTE(r,g,b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))
 
-uint16_t (*palette_fns[num_palette_fns])(uint16_t) = {
+uint16_t (*paletteFns[numPaletteFns])(uint16_t) = {
     // color display (default)
-    [&] (uint16_t c) -> uint16_t {
-         return c;
-    },
+        static_cast<uint16_t (*)(uint16_t)>([](uint16_t c) -> uint16_t {
+            return c;
+        }),
     // B&W TV for real retro feeling. Looks great
-    [&] (uint16_t c) -> uint16_t {
-        auto r = (c & 0b1111100000000000) >> 8;
-        auto g = (c & 0b0000011111100000) >> 3;
-        auto b = (c & 0b0000000000011111) << 3;
-        
-        return ( ( ( ( (int)( 0.299f * r + 0.587f * g + 0.114f * b ) ) & 0xF8) << 8 ) |
-            ( ( ( (int)( 0.299f * r + 0.587f * g + 0.114f * b ) ) & 0xFC) << 3 ) |
-            ( ( ( (int)( 0.299f * r + 0.587f * g + 0.114f * b ) ) & 0xFF) >> 3 ) );
-    },
+        static_cast<uint16_t (*)(uint16_t)>([](uint16_t c) -> uint16_t {
+            auto r = (c & 0b1111100000000000) >> 8;
+            auto g = (c & 0b0000011111100000) >> 3;
+            auto b = (c & 0b0000000000011111) << 3;
+
+            return (((((uint16_t) (0.299f * r + 0.587f * g + 0.114f * b)) & 0xF8) << 8) |
+                    ((((uint16_t) (0.299f * r + 0.587f * g + 0.114f * b)) & 0xFC) << 3) |
+                    ((((uint16_t) (0.299f * r + 0.587f * g + 0.114f * b)) & 0xFF) >> 3));
+        }),
     // green display
-    [&] (uint16_t c) -> uint16_t {
-        auto r = (c & 0b1111100000000000) >> 8;
-        auto g = (c & 0b0000011111100000) >> 3;
-        auto b = (c & 0b0000000000011111) << 3;
-        
-        return ( ( 0 ) |
-            ( ( ( (int)( 0.299f * r + 0.587f * g + 0.114f * b ) ) & 0xFC) << 3 ) |
-            ( 0 ) );
-    },
+        static_cast<uint16_t (*)(uint16_t)>([](uint16_t c) -> uint16_t {
+            auto r = (c & 0b1111100000000000) >> 8;
+            auto g = (c & 0b0000011111100000) >> 3;
+            auto b = (c & 0b0000000000011111) << 3;
+
+            return (((uint16_t) (0.299f * r + 0.587f * g + 0.114f * b)) & 0xFC) << 3;
+        }),
     // amber display
-    [&] (uint16_t c) -> uint16_t {
-        auto r = (c & 0b1111100000000000) >> 8;
-        auto g = (c & 0b0000011111100000) >> 3;
-        auto b = (c & 0b0000000000011111) << 3;
-        
-        return ( ( ( ( (int)( 0.299f * r + 0.587f * g + 0.114f * b ) ) & 0xF8) << 8 ) |
-            ( ( ( (int)( 0.69f * 0.299f * r + 0.69f * 0.587f * g + 0.69f * 0.114f * b ) ) & 0xFC) << 3 ) |
-            ( 0 ) );
-    }
+        static_cast<uint16_t (*)(uint16_t)>([](uint16_t c) -> uint16_t {
+            auto r = (c & 0b1111100000000000) >> 8;
+            auto g = (c & 0b0000011111100000) >> 3;
+            auto b = (c & 0b0000000000011111) << 3;
+
+            return (((((uint16_t) (0.299f * r + 0.587f * g + 0.114f * b)) & 0xF8) << 8) |
+                    ((((uint16_t) (0.69f * 0.299f * r + 0.69f * 0.587f * g + 0.69f * 0.114f * b)) & 0xFC) << 3));
+        })
 };
 
-const uint16_t palettes[num_palettes][16] = {
+const uint16_t palettes[numPalettes][16] = {
     {
         PALETTE(0x00, 0x00, 0x00), // black
         PALETTE(0xff, 0xff, 0xff), // white

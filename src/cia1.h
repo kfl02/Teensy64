@@ -1,5 +1,7 @@
-#ifndef Teensy64_cia1_h_
-#define Teensy64_cia1_h_
+#pragma once
+
+#ifndef TEENSY64_CIA1_H
+#define TEENSY64_CIA1_H
 
 #include <Arduino.h>
 

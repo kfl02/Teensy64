@@ -47,7 +47,7 @@
 #include <cstdint>
 #include "Teensy64.h"
 #include "cpu.h"
-#include "cia.h"
+#include "cia6526.h"
 
 #define FLAG_CARRY     0x01
 #define FLAG_ZERO      0x02

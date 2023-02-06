@@ -32,8 +32,11 @@
     Programm erhalten haben. Wenn nicht, siehe <http://www.gnu.org/licenses/>.
 
 */
-#ifndef TEENSY64_H
-#define TEENSY64_H
+
+#pragma once
+
+#ifndef TEENSY64_TEENSY64_H
+#define TEENSY64_TEENSY64_H
 
 #include <Arduino.h>
 #include <DMAChannel.h>
@@ -46,8 +49,7 @@
 #undef VERSION
 #endif
 
-#define VERSION "09"
-#define NTSC (!PAL)
+#define VERSION "10"
 
 #include "ILI9341_t3n.h"
 #include "keyboard_usb.h"
@@ -58,39 +60,39 @@ extern USBHost myusb;
 void initMachine();
 void resetMachine() __attribute__ ((noreturn));
 void resetExternal();
-unsigned loadFile(const char *filename);
 
-extern uint8_t SDinitialized;
+extern bool SDinitialized;
 
 #if PAL == 1
-#define CRYSTAL        17734475.0f
-#define CLOCKSPEED      ( CRYSTAL / 18.0f) // 985248,61 Hz
-#define CYCLESPERRASTERLINE 63
-#define LINECNT         312 //Rasterlines
-#define VBLANK_FIRST    300
-#define VBLANK_LAST     15
+
+static const float CRYSTAL = 17734475.0f;
+static const float CLOCKSPEED = CRYSTAL / 18.0f; // 985248,61 Hz
+
+static const unsigned int CYCLESPERRASTERLINE = 63;
+static const unsigned int LINECNT = 312;
+static const unsigned int VBLANK_FIRST = 300;
+static const unsigned int VBLANK_LAST = 15;
 
 #else // PAL == 1
-#define CRYSTAL       	14318180.0f
-#define CLOCKSPEED      ( CRYSTAL / 14.0f) // 1022727,14 Hz
-#define CYCLESPERRASTERLINE 64
-#define LINECNT       	263 //Rasterlines
-#define VBLANK_FIRST    13
-#define VBLANK_LAST     40
+
+static const float CRYSTAL = 14318180.0f;
+static const float CLOCKSPEED = CRYSTAL / 14.0f; // 1022727,14 Hz
+
+static const unsigned int CYCLESPERRASTERLINE = 64;
+static const unsigned int LINECNT = 263; //Rasterlines
+static const unsigned int VBLANK_FIRST = 13;
+static const unsigned int VBLANK_LAST = 40;
+
 #endif // PAL == 1
 
-#define LINEFREQ                (CLOCKSPEED / CYCLESPERRASTERLINE) //Hz
-#define REFRESHRATE            (LINEFREQ / LINECNT) //Hz
-#define LINETIMER_DEFAULT_FREQ (1000000.0f/LINEFREQ)
+static const float LINEFREQ = CLOCKSPEED / CYCLESPERRASTERLINE;
+static const float REFRESHRATE = LINEFREQ / LINECNT; //Hz
+static const float LINETIMER_DEFAULT_FREQ = 1000000.0f/LINEFREQ;
+static const float MCU_C64_RATIO= F_CPU / CLOCKSPEED; //MCU Cycles per C64 Cycle
+static const float US_C64_CYCLE = 1000000.0f / CLOCKSPEED; // Duration (µs) of a C64 Cycle
+static const float AUDIOSAMPLERATE =  LINEFREQ * 2; // (~32kHz)
 
-
-#define MCU_C64_RATIO   ((float)F_CPU / CLOCKSPEED) //MCU Cycles per C64 Cycle
-#define US_C64_CYCLE    (1000000.0f / CLOCKSPEED) // Duration (µs) of a C64 Cycle
-
-#define AUDIOSAMPLERATE     (LINEFREQ * 2)// (~32kHz)
-
-#define ISR_PRIORITY_RASTERLINE   255
-
+static const unsigned int ISR_PRIORITY_RASTERLINE = 255;
 
 //Pins
 
@@ -116,13 +118,13 @@ extern uint8_t SDinitialized;
 
 #if 0
 #define WRITE_ATN_CLK_DATA(value) { \
-    digitalWriteFast(PIN_SERIAL_ATN, (~value & 0x08));\//PTA13 IEC ATN 3
-    digitalWriteFast(PIN_SERIAL_CLK, (~value & 0x10)); \ //PTA14 IEC CLK 4
-    digitalWriteFast(PIN_SERIAL_DATA, (~value & 0x20)); \ //PTA15 IEC DATA 5
+    digitalWriteFast(PIN_SERIAL_ATN, (~value & CIA2_PRA_IEC_ATN_OUT)); \
+    digitalWriteFast(PIN_SERIAL_CLK, (~value & CIA2_PRA_IEC_CLK_OUT)); \
+    digitalWriteFast(PIN_SERIAL_DATA, (~value & CIA2_PRA_IEC_DATA_OUT)); \
 }
 #define READ_CLK_DATA() \
-  ((digitalReadFast(PIN_SERIAL_CLK) << 6) | \
-   (digitalReadFast(PIN_SERIAL_DATA) << 7))
+  ((digitalReadFast(PIN_SERIAL_CLK) ? CIA2_PRA_IEC_CLK_IN : 0) | \
+   (digitalReadFast(PIN_SERIAL_DATA) ? CIA2_PRA_IEC_DATA_IN : 0))
 #else // 0
 #define WRITE_ATN_CLK_DATA(value) { \
     GPIOA_PCOR = ((value >> 3) & 0x07) << 13; \
@@ -151,4 +153,4 @@ extern uint8_t SDinitialized;
 #include "output_dac.h"
 #include "cpu.h"
 
-#endif // TEENSY64_H
+#endif // TEENSY64_TEENSY64_H
