@@ -1,5 +1,5 @@
 /*
-  Copyright Frank Bösing, 2017
+  Copyright Frank Bösing, Karsten Fleischer, 2017 - 2023
 
   This file is part of Teensy64.
 
@@ -64,7 +64,7 @@ uint16_t *const screenMem = &screen[0][0];
 
 inline __attribute__((always_inline))
 static uint8_t spriteBitFromLineData(uint16_t data) {
-    return 1 << ((data >> 8) & 0x07);
+    return (uint8_t)(1 << (uint8_t)((data >> 8) & 0x07));
 }
 
 inline __attribute__((always_inline))
@@ -132,7 +132,7 @@ static void fastFillLineNoSprites(tpixel *p, const tpixel *pe, const uint16_t co
 }
 
 inline __attribute__((always_inline))
-static void fastFillLine(tpixel *p, const tpixel *pe, const uint16_t col, uint16_t *spl) {
+static void fastFillLine(tpixel *p, const tpixel *pe, const uint16_t col, uint16_t const *spl) {
     if(spl != nullptr && cpu.vic.lineHasSprites) {
         int i = 0;
         uint16_t sprite;
@@ -148,32 +148,64 @@ static void fastFillLine(tpixel *p, const tpixel *pe, const uint16_t col, uint16
 }
 
 /*****************************************************************************************************/
-static void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
-    // Standard-Textmodus(ECM/BMM/MCM=0/0/0)
+static void mode0(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Standard-Textmodus (ECM / BMM / MCM = 0/0/0)
-      In diesem Modus (wie in allen Textmodi) liest der VIC aus der videomatrix 8-Bit-Zeichenzeiger,
-      die die Adresse der Punktmatrix des Zeichens im Zeichengenerator angibt. Damit ist ein Zeichensatz
-      von 256 Zeichen verfügbar, die jeweils aus 8×8 Pixeln bestehen, die in 8 aufeinanderfolgenden Bytes
-      im Zeichengenerator abgelegt sind. Mit den Bits VM10-13 und CB11-13 aus Register $d018 lassen sich
-      videomatrix und Zeichengenerator im Speicher verschieben. Im Standard-Textmodus entspricht jedes Bit
-      im Zeichengenerator direkt einem Pixel auf dem Bildschirm. Die Vordergrundfarbe ist für jedes Zeichen
-      im Farbnibble aus der videomatrix angegeben, die Hintergrundfarbe wird global durch Register $d021 festgelegt.
+        3.7.3.1. Standard text mode (ECM/BMM/MCM=0/0/0)
+        -----------------------------------------------
 
-      +----+----+----+----+----+----+----+----+
-      |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-      +----+----+----+----+----+----+----+----+
-      |         8 Pixel (1 Bit/Pixel)         |
-      |                                       |
-      | "0": Hintergrundfarbe 0 ($d021)       |
-      | "1": Farbe aus Bits 8-11 der c-Daten  |
-      +---------------------------------------+
+        In this mode (as in all text modes), the VIC reads 8 bit character pointers
+        from the video matrix that specify the address of the dot matrix of the
+        character in the character generator. A character set of 256 characters is
+        available, each consisting of 8×8 pixels which are stored in 8 successive
+        bytes in the character generator. Video matrix and character generator can
+        be moved in memory with the bits VM10-VM13 and CB11-CB13 of register $d018.
 
-    */
+        In standard text mode, every bit in the character generator directly
+        corresponds to one pixel on the screen. The foreground color is given by
+        the color nybble from the video matrix for each character, the background
+        color is set globally with register $d021.
 
-    uint8_t chr, pixel;
-    uint16_t fgcol;
-    uint16_t bgcol;
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |      Color of     | D7 | D6 | D5 | D4 | D3 | D2 | D1 | D0 |
+         |     "1" pixels    |    |    |    |    |    |    |    |    |
+         +-------------------+----+----+----+----+----+----+----+----+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13|CB12|CB11| D7 | D6 | D5 | D4 | D3 | D2 | D1 | D0 | RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         8 pixels (1 bit/pixel)        |
+         |                                       |
+         | "0": Background color 0 ($d021)       |
+         | "1": Color from bits 8-11 of c-data   |
+         +---------------------------------------+
+     */
+
     uint16_t x = 0;
 
     CHARSETPTR();
@@ -182,29 +214,30 @@ static void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
         do {
             BADLINE(x);
 
-            chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
-            fgcol = cpu.vic.lineMemCol[x];
+            auto chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+            auto fgcol = cpu.vic.lineMemCol[x];
+            uint8_t pixel;
 
             x++;
 
             unsigned m = min(8, pe - p);
 
             for(unsigned i = 0; i < m; i++) {
-                int spriteLineData = *spl++;
+                uint16_t spriteLineData = *spl++;
 
                 if(spriteLineData) {     // Sprite: Ja
                     uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
                     uint8_t spritePixel = spritePixelFromLineData(spriteLineData);
                     bool spritePriority = spritePriorityFromLineData(spriteLineData);
 
-                    if(spritePriority) {   // Sprite: Hinter Text  MDP = 1
+                    if(spritePriority) {   // Sprite: Hinter Text  MxDP = 1
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = fgcol;
                         } else {
                             pixel = spritePixel;
                         }
-                    } else {            // Sprite: Vor Text //MDP = 0
+                    } else {            // Sprite: Vor Text //MxDP = 0
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spriteBit;
                         }
@@ -222,12 +255,11 @@ static void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
         PRINTOVERFLOWS
     } else { //Keine Sprites
         while(p < pe - 8) {
-
             BADLINE(x);
 
-            chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
-            fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-            bgcol = cpu.vic.palette[cpu.vic.R[VIC_B0C]];
+            auto chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+            auto fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
+            auto bgcol = cpu.vic.palette[cpu.vic.R[VIC_B0C]];
             x++;
 
             *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -243,9 +275,9 @@ static void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
         while(p < pe) {
             BADLINE(x);
 
-            chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
-            fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
-            bgcol = cpu.vic.palette[cpu.vic.R[VIC_B0C]];
+            auto chr = cpu.vic.charsetPtr[cpu.vic.lineMemChr[x] * 8];
+            auto fgcol = cpu.vic.palette[cpu.vic.lineMemCol[x]];
+            auto bgcol = cpu.vic.palette[cpu.vic.R[VIC_B0C]];
             x++;
 
             *p++ = (chr & 0x80) ? fgcol : bgcol;
@@ -274,42 +306,75 @@ static void mode0(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 }
 
 /*****************************************************************************************************/
-static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode1(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Multicolor-Textmodus (ECM/BMM/MCM=0/0/1)
-      Dieser Modus ermöglicht es, auf Kosten der horizontalen Auflösung vierfarbige Zeichen darzustellen.
-      Ist Bit 11 der c-Daten Null, wird das Zeichen wie im Standard-Textmodus dargestellt, wobei aber nur die
-      Farben 0-7 für den Vordergrund zur Verfügung stehen. Ist Bit 11 gesetzt, bilden jeweils zwei horizontal
-      benachbarte Bits der Punktmatrix ein Pixel. Dadurch ist die Auflösung des Zeichens auf 4×8 reduziert
-      (die Pixel sind doppelt so breit, die Gesamtbreite der Zeichen ändert sich also nicht).
-      Interessant ist, daß nicht nur die Bitkombination „00”, sondern auch „01” für die Spritepriorität
-      und -kollisionserkennung zum "Hintergrund" gezählt wird.
+        3.7.3.2. Multicolor text mode (ECM/BMM/MCM=0/0/1)
+        -------------------------------------------------
 
-      +----+----+----+----+----+----+----+----+
-      |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-      +----+----+----+----+----+----+----+----+
-      |         8 Pixel (1 Bit/Pixel)         |
-      |                                       | MC-Flag = 0
-      | "0": Hintergrundfarbe 0 ($d021)       |
-      | "1": Farbe aus Bits 8-10 der c-Daten  |
-      +---------------------------------------+
-      |         4 Pixel (2 Bit/Pixel)         |
-      |                                       |
-      | "00": Hintergrundfarbe 0 ($d021)      | MC-Flag = 1
-      | "01": Hintergrundfarbe 1 ($d022)      |
-      | "10": Hintergrundfarbe 2 ($d023)      |
-      | "11": Farbe aus Bits 8-10 der c-Daten |
-      +---------------------------------------+
+        This mode allows for displaying four-colored characters at the cost of
+        horizontal resolution. If bit 11 of the c-data is zero, the character is
+        displayed as in standard text mode with only the colors 0-7 available for
+        the foreground. If bit 11 is set, each two adjacent bits of the dot matrix
+        form one pixel. By this means, the resolution of a character of reduced to
+        4×8 (the pixels are twice as wide, so the total width of the characters
+        doesn't change).
 
+        It is interesting that not only the bit combination "00" but also "01" is
+        regarded as "background" for the sprite priority and collision detection.
+
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | MC |   Color of   | D7 | D6 | D5 | D4 | D3 | D2 | D1 | D0 |
+         |flag|  "11" pixels |    |    |    |    |    |    |    |    |
+         +----+--------------+----+----+----+----+----+----+----+----+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13|CB12|CB11| D7 | D6 | D5 | D4 | D3 | D2 | D1 | D0 | RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         8 pixels (1 bit/pixel)        |
+         |                                       | MC flag = 0
+         | "0": Background color 0 ($d021)       |
+         | "1": Color from bits 8-10 of c-data   |
+         +---------------------------------------+
+         |         4 pixels (2 bits/pixel)       |
+         |                                       |
+         | "00": Background color 0 ($d021)      | MC flag = 1
+         | "01": Background color 1 ($d022)      |
+         | "10": Background color 2 ($d023)      |
+         | "11": Color from bits 8-10 of c-data  |
+         +---------------------------------------+
     */
 
-    // POKE 53270,PEEK(53270) OR 16
-    // poke 53270,peek(53270) or 16
-
     uint8_t pixel;
-    uint16_t bgcol, fgcol;
-    uint16_t colors[4];
+    uint16_t bgcol;
+    uint16_t fgcol;
     uint8_t chr;
+    uint8_t colors[4];
     uint8_t x = 0;
 
     CHARSETPTR();
@@ -339,13 +404,13 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
                 unsigned m = min(8, pe - p);
 
                 for(unsigned i = 0; i < m; i++) {
-                    int spriteLineData = *spl++;
+                    uint16_t spriteLineData = *spl++;
 
                     if(spriteLineData) {     // Sprite: Ja
                         /*
                           Sprite-Prioritäten (Anzeige)
-                          MDP = 1: Grafikhintergrund, Sprite, Vordergrund
-                          MDP = 0: Grafikhintergrund, Vordergrund, Sprite
+                          MxDP = 1: Grafikhintergrund, Sprite, Vordergrund
+                          MxDP = 0: Grafikhintergrund, Vordergrund, Sprite
 
                           Kollision:
                           Eine Kollision zwischen Sprites und anderen Grafikdaten wird erkannt,
@@ -356,12 +421,12 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
                         bool spritePriority = spritePriorityFromLineData(spriteLineData);
                         pixel = spritePixelFromLineData(spriteLineData);
 
-                        if(spritePriority) {   // MDP = 1
+                        if(spritePriority) {   // MxDP = 1
                             if(chr & 0x80) { //Vordergrundpixel ist gesetzt
                                 cpu.vic.fgcollision |= spriteBit;
                                 pixel = colors[3];
                             }
-                        } else {            // MDP = 0
+                        } else {            // MxDP = 0
                             if(chr & 0x80) {
                                 cpu.vic.fgcollision |= spriteBit;
                             } //Vordergrundpixel ist gesetzt
@@ -384,7 +449,7 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     chr = chr << 2;
 
-                    int spriteLineData = *spl++;
+                    uint16_t spriteLineData = *spl++;
 
                     if(spriteLineData) {    // Sprite: Ja
                         uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -392,12 +457,12 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                         pixel = spritePixelFromLineData(spriteLineData);
 
-                        if(spritePriority) {  // MDP = 1
+                        if(spritePriority) {  // MxDP = 1
                             if(chr & 0x80) {  //Vordergrundpixel ist gesetzt
                                 cpu.vic.fgcollision |= spriteBit;
                                 pixel = colors[c];
                             }
-                        } else {          // MDP = 0
+                        } else {          // MxDP = 0
                             if(chr & 0x80) {
                                 cpu.vic.fgcollision |= spriteBit;
                             } //Vordergrundpixel ist gesetzt
@@ -421,13 +486,13 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                         pixel = spritePixelFromLineData(spriteLineData);
 
-                        if(spritePriority) {  // MDP = 1
+                        if(spritePriority) {  // MxDP = 1
 
                             if(chr & 0x80) { //Vordergrundpixel ist gesetzt
                                 cpu.vic.fgcollision |= spriteBit;
                                 pixel = colors[c];
                             }
-                        } else {          // MDP = 0
+                        } else {          // MxDP = 0
                             if(chr & 0x80) {
                                 cpu.vic.fgcollision |= spriteBit;
                             } //Vordergrundpixel ist gesetzt
@@ -441,9 +506,7 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
         } while(p < pe);
         PRINTOVERFLOWS
     } else { //Keine Sprites
-
         while(p < pe - 8) {
-
             int c;
 
             bgcol = cpu.vic.palette[cpu.vic.R[VIC_B0C]];
@@ -564,29 +627,67 @@ static void mode1(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 }
 
 /*****************************************************************************************************/
-static void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode2(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-       Standard-Bitmap-Modus (ECM / BMM / MCM = 0/1/0) ("HIRES")
-       In diesem Modus (wie in allen Bitmap-Modi) liest der VIC die Grafikdaten aus einer 320×200-Bitmap,
-       in der jedes Bit direkt einem Punkt auf dem Bildschirm entspricht. Die Daten aus der videomatrix
-       werden für die Farbinformation benutzt. Da die videomatrix weiterhin nur eine 40×25-Matrix ist,
-       können die Farben nur für Blöcke von 8×8 Pixeln individuell bestimmt werden (also eine Art YC-8:1-Format).
-       Da die Entwickler des VIC-II den Bitmap-Modus mit sowenig zusätzlichem Schaltungsaufwand wie möglich realisieren wollten
-       (der VIC-I hatte noch keinen Bitmap-Modus), ist die Bitmap etwas ungewöhnlich im Speicher abgelegt:
-       Im Gegensatz zu modernen Videochips, die die Bitmap linear aus dem Speicher lesen, bilden beim VIC jeweils 8 aufeinanderfolgende Bytes einen 8×8-Pixelblock
-       auf dem Bildschirm. Mit den Bits VM10-13 und CB13 aus Register $d018 lassen sich videomatrix und Bitmap im Speicher verschieben.
-       Im Standard-Bitmap-Modus entspricht jedes Bit in der Bitmap direkt einem Pixel auf dem Bildschirm.
-       Für jeden 8×8-Block können Vorder- und Hintergrundfarbe beliebig eingestellt werden.
+        3.7.3.3. Standard bitmap mode (ECM/BMM/MCM=0/1/0)
+        -------------------------------------------------
 
-       +----+----+----+----+----+----+----+----+
-       |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-       +----+----+----+----+----+----+----+----+
-       |         8 Pixel (1 Bit/Pixel)         |
-       |                                       |
-       | "0": Farbe aus Bits 0-3 der c-Daten   |
-       | "1": Farbe aus Bits 4-7 der c-Daten   |
-       +---------------------------------------+
+        In this mode (as in all bitmap modes), the VIC reads the graphics data from
+        a 320×200 bitmap in which every bit corresponds to one pixel on the screen.
+        The data from the video matrix is used for color information. As the video
+        matrix is still only a 40×25 matrix, you can only specify the colors for
+        blocks of 8×8 pixels individually (sort of a YC 8:1 format). As the
+        designers of the VIC wanted to realize the bitmap mode with as little
+        additional circuitry as possible (the VIC-I didn't have a bitmap mode), the
+        arrangement of the bitmap in memory is somewhat weird: In contrast to
+        modern video chips that read the bitmap in a linear fashion from memory,
+        the VIC forms an 8×8 pixel block on the screen from 8 successive bytes of
+        the bitmap. The video matrix and the bitmap can be moved in memory with the
+        bits VM10-VM13 and CB13 of register $d018.
 
+        In standard bitmap mode, every bit in the bitmap directly corresponds to
+        one pixel on the screen. Foreground and background color can be arbitrarily
+        set for every 8×8 block.
+
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |       unused      |     Color of      |     Color of      |
+         |                   |    "1" pixels     |    "0" pixels     |
+         +-------------------+-------------------+-------------------+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0| RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         8 pixels (1 bit/pixel)        |
+         |                                       |
+         | "0": Color from bits 0-3 of c-data    |
+         | "1": Color from bits 4-7 of c-data    |
+         +---------------------------------------+
 
        http://www.devili.iki.fi/Computers/Commodore/C64/Programmers_Reference/Chapter_3/page_127.html
     */
@@ -611,15 +712,15 @@ static void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
             unsigned m = min(8, pe - p);
 
             for(unsigned i = 0; i < m; i++) {
-                int spriteLineData = *spl++;
+                uint16_t spriteLineData = *spl++;
 
                 chr = chr << 1;
 
                 if(spriteLineData) {     // Sprite: Ja
                     /*
                        Sprite-Prioritäten (Anzeige)
-                       MDP = 1: Grafikhintergrund, Sprite, Vordergrund
-                       MDP = 0: Grafikhintergrund, Vordergrund, Sprite
+                       MxDP = 1: Grafikhintergrund, Sprite, Vordergrund
+                       MxDP = 0: Grafikhintergrund, Vordergrund, Sprite
 
                        Kollision:
                        Eine Kollision zwischen Sprites und anderen Grafikdaten wird erkannt,
@@ -631,12 +732,12 @@ static void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     pixel = spritePixelFromLineData(spriteLineData);
 
-                    if(spritePriority) {   // MDP = 1
+                    if(spritePriority) {   // MxDP = 1
                         if(chr & 0x80) { //Vordergrundpixel ist gesetzt
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = fgcol;
                         }
-                    } else {            // MDP = 0
+                    } else {            // MxDP = 0
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spriteBit;
                         } //Vordergrundpixel ist gesetzt
@@ -706,30 +807,60 @@ static void mode2(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 }
 
 /*****************************************************************************************************/
-static void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode3(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Multicolor-Bitmap-Modus (ECM/BMM/MCM=0/1/1)
+        3.7.3.4. Multicolor bitmap mode (ECM/BMM/MCM=0/1/1)
+        ---------------------------------------------------
 
-      Ähnlich wie beim Multicolor-Textmodus bilden auch in diesem Modus jeweils
-      zwei benachbarte Bits ein (doppelt so breites) Pixel. Die Auflösung
-      reduziert sich damit auf 160×200 Pixel.
+        Similar to the multicolor text mode, this mode also forms (twice as wide)
+        pixels by combining two adjacent bits. So the resolution is reduced to
+        160×200 pixels.
 
-      Genau wie beim Multicolor-Textmodus wird die Bitkombination "01" für die
-      Spritepriorität und -kollisionserkennung zum "Hintergrund" gezählt.
+        The bit combination "01" is also treated as "background" for the sprite
+        priority and collision detection, as in multicolor text mode.
 
-      +----+----+----+----+----+----+----+----+
-      |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-      +----+----+----+----+----+----+----+----+
-      |         4 Pixel (2 Bit/Pixel)         |
-      |                                       |
-      | "00": Hintergrundfarbe 0 ($d021)      |
-      | "01": Farbe aus Bits 4-7 der c-Daten  |
-      | "10": Farbe aus Bits 0-3 der c-Daten  |
-      | "11": Farbe aus Bits 8-11 der c-Daten |
-      +---------------------------------------+
+        c-access
 
-      POKE 53265,PEEK(53625)OR 32: POKE 53270,PEEK(53270)OR 16
-    */
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |     Color of      |     Color of      |     Color of      |
+         |    "11 pixels"    |    "01" pixels    |    "10" pixels    |
+         +-------------------+-------------------+-------------------+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0| RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         4 pixels (2 bits/pixel)       |
+         |                                       |
+         | "00": Background color 0 ($d021)      |
+         | "01": Color from bits 4-7 of c-data   |
+         | "10": Color from bits 0-3 of c-data   |
+         | "11": Color from bits 8-11 of c-data  |
+         +---------------------------------------+
+     */
     uint8_t *bP = cpu.vic.bitmapPtr + vc * 8 + cpu.vic.rc;
     uint16_t colors[4];
     uint8_t pixel;
@@ -764,7 +895,7 @@ static void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
                 uint32_t c = (chr >> 6) & 0x03;
                 chr = chr << 2;
 
-                int spriteLineData = *spl++;
+                uint16_t spriteLineData = *spl++;
 
                 if(spriteLineData) {    // Sprite: Ja
                     uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -772,12 +903,12 @@ static void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     pixel = spritePixelFromLineData(spriteLineData);
 
-                    if(spritePriority) {  // MDP = 1
+                    if(spritePriority) {  // MxDP = 1
                         if(c & 0x02) {  //Vordergrundpixel ist gesetzt
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = colors[c];
                         }
-                    } else {          // MDP = 0
+                    } else {          // MxDP = 0
                         if(c & 0x02) {
                             cpu.vic.fgcollision |= spriteBit;
                         } //Vordergundpixel ist gesetzt
@@ -797,12 +928,12 @@ static void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     pixel = spritePixelFromLineData(spriteLineData);
 
-                    if(spritePriority) {  // MDP = 1
+                    if(spritePriority) {  // MxDP = 1
                         if(c & 0x02) {  //Vordergrundpixel ist gesetzt
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = colors[c];
                         }
-                    } else {          // MDP = 0
+                    } else {          // MxDP = 0
                         if(c & 0x02) {
                             cpu.vic.fgcollision |= spriteBit;
                         } //Vordergundpixel ist gesetzt
@@ -894,29 +1025,60 @@ static void mode3(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 }
 
 /*****************************************************************************************************/
-static void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
-    //ECM-Textmodus (ECM/BMM/MCM=1/0/0)
+static void mode4(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Dieser Textmodus entspricht dem Standard-Textmodus, erlaubt es aber, für
-      jedes einzelne Zeichen eine von vier Hintergrundfarben auszuwählen. Die
-      Auswahl geschieht über die oberen beiden Bits des Zeichenzeigers. Dadurch
-      reduziert sich der Zeichenvorrat allerdings von 256 auf 64 Zeichen.
+        3.7.3.5. ECM text mode (ECM/BMM/MCM=1/0/0)
+        ------------------------------------------
 
-      +----+----+----+----+----+----+----+----+
-      |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-      +----+----+----+----+----+----+----+----+
-      |         8 Pixel (1 Bit/Pixel)         |
-      |                                       |
-      | "0": Je nach Bits 6/7 der c-Daten     |
-      |      00: Hintergrundfarbe 0 ($d021)   |
-      |      01: Hintergrundfarbe 1 ($d022)   |
-      |      10: Hintergrundfarbe 2 ($d023)   |
-      |      11: Hintergrundfarbe 3 ($d024)   |
-      | "1": Farbe aus Bits 8-11 der c-Daten  |
-      +---------------------------------------+
+        This text mode is the same as the standard text mode, but it allows the
+        selection of one of four background colors for every single character. The
+        selection is done with the upper two bits of the character pointer. This,
+        however, reduces the character set from 256 to 64 characters.
+
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |     Color of      |Back.col.| D5 | D4 | D3 | D2 | D1 | D0 |
+         |    "1" pixels     |selection|    |    |    |    |    |    |
+         +-------------------+---------+----+----+----+----+----+----+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13|CB12|CB11|  0 |  0 | D5 | D4 | D3 | D2 | D1 | D0 | RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         8 pixels (1 bit/pixel)        |
+         |                                       |
+         | "0": Depending on bits 6/7 of c-data  |
+         |      00: Background color 0 ($d021)   |
+         |      01: Background color 1 ($d022)   |
+         |      10: Background color 2 ($d023)   |
+         |      11: Background color 3 ($d024)   |
+         | "1": Color from bits 8-11 of c-data   |
+         +---------------------------------------+
     */
-    // https://www.c64-wiki.de/wiki/Hintergrundfarbe
-    // POKE 53265, PEEK(53265) OR 64:REM CURSOR BLINKT ROT abc
 
     uint8_t chr, pixel;
     uint16_t fgcol;
@@ -938,7 +1100,7 @@ static void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
             unsigned m = min(8, pe - p);
 
             for(unsigned i = 0; i < m; i++) {
-                int spriteLineData = *spl++;
+                uint16_t spriteLineData = *spl++;
 
                 if(spriteLineData) {     // Sprite: Ja
                     uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -1025,22 +1187,60 @@ static void mode4(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 /* Ungültige Modi ************************************************************************************/
 /*****************************************************************************************************/
 
-static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode5(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Ungültiger Textmodus (ECM/BMM/MCM=1/0/1)
+        3.7.3.5. ECM text mode (ECM/BMM/MCM=1/0/0)
+        ------------------------------------------
 
-      Das gleichzeitige Setzen der ECM- und MCM-Bits wählt keinen der
-      "offiziellen" Grafikmodi des VIC, sondern erzeugt nur schwarze Pixel.
-      Nichtsdestotrotz erzeugt der Grafikdatensequenzer auch in diesem Modus
-      intern gültige Grafikdaten, die die Spritekollisionserkennung triggern
-      können. Über den Umweg der Spritekollisionen kann man die erzeugten Daten
-      auch auslesen (sehen kann man nichts, das Bild ist schwarz). Man kann so
-      allerdings nur Vordergrund- und Hintergrundpixel unterscheiden, die
-      Farbinformation läßt sich aus den Spritekollisionen nicht gewinnen.
+        This text mode is the same as the standard text mode, but it allows the
+        selection of one of four background colors for every single character. The
+        selection is done with the upper two bits of the character pointer. This,
+        however, reduces the character set from 256 to 64 characters.
 
-      Die erzeugte Grafik entspricht der des Multicolor-Textmodus, allerdings ist
-      der Zeichenvorrat genau wie im ECM-Modus auf 64 Zeichen eingeschränkt.
-    */
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |     Color of      |Back.col.| D5 | D4 | D3 | D2 | D1 | D0 |
+         |    "1" pixels     |selection|    |    |    |    |    |    |
+         +-------------------+---------+----+----+----+----+----+----+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13|CB12|CB11|  0 |  0 | D5 | D4 | D3 | D2 | D1 | D0 | RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         8 pixels (1 bit/pixel)        |
+         |                                       |
+         | "0": Depending on bits 6/7 of c-data  |
+         |      00: Background color 0 ($d021)   |
+         |      01: Background color 1 ($d022)   |
+         |      10: Background color 2 ($d023)   |
+         |      11: Background color 3 ($d024)   |
+         | "1": Color from bits 8-11 of c-data   |
+         +---------------------------------------+
+     */
     CHARSETPTR();
 
     uint8_t chr, pixel;
@@ -1061,14 +1261,13 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
                 unsigned m = min(8, pe - p);
                 for(unsigned i = 0; i < m; i++) {
 
-                    int spriteLineData = *spl;
-                    *spl++ = 0;
+                    uint16_t spriteLineData = *spl++;
 
                     if(spriteLineData) {     // Sprite: Ja
                         /*
                           Sprite-Prioritäten (Anzeige)
-                          MDP = 1: Grafikhintergrund, Sprite, Vordergrund
-                          MDP = 0: Grafikhintergrund, Vordergrund, Sprite
+                          MxDP = 1: Grafikhintergrund, Sprite, Vordergrund
+                          MxDP = 0: Grafikhintergrund, Vordergrund, Sprite
 
                           Kollision:
                           Eine Kollision zwischen Sprites und anderen Grafikdaten wird erkannt,
@@ -1081,12 +1280,12 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
                         pixel = spritePixelFromLineData(spriteLineData);
 
 
-                        if(spritePriority) {   // MDP = 1
+                        if(spritePriority) {   // MxDP = 1
                             if(chr & 0x80) { //Vordergrundpixel ist gesetzt
                                 cpu.vic.fgcollision |= spriteBit;
                                 pixel = 0;
                             }
-                        } else {            // MDP = 0
+                        } else {            // MxDP = 0
                             if(chr & 0x80) {
                                 cpu.vic.fgcollision |= spriteBit;
                             } //Vordergrundpixel ist gesetzt
@@ -1107,9 +1306,7 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     chr = chr << 2;
 
-                    int spriteLineData = *spl;
-
-                    *spl++ = 0;
+                    uint16_t spriteLineData = *spl++;
 
                     if(spriteLineData) {    // Sprite: Ja
                         uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -1117,12 +1314,12 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                         pixel = spritePixelFromLineData(spriteLineData);
 
-                        if(spritePriority) {  // MDP = 1
+                        if(spritePriority) {  // MxDP = 1
                             if(chr & 0x80) {  //Vordergrundpixel ist gesetzt
                                 cpu.vic.fgcollision |= spriteBit;
                                 pixel = 0;
                             }
-                        } else {          // MDP = 0
+                        } else {          // MxDP = 0
                             if(chr & 0x80) {
                                 cpu.vic.fgcollision |= spriteBit;
                             } //Vordergrundpixel ist gesetzt
@@ -1137,9 +1334,8 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
                         break;
                     }
 
-                    spriteLineData = *spl;
+                    spriteLineData = *spl++;
 
-                    *spl++ = 0;
                     //Das gleiche nochmal für das nächste Pixel
                     if(spriteLineData) {    // Sprite: Ja
                         uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -1147,12 +1343,12 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                         pixel = spritePixelFromLineData(spriteLineData);
 
-                        if(spritePriority) {  // MDP = 1
+                        if(spritePriority) {  // MxDP = 1
                             if(chr & 0x80) { //Vordergrundpixel ist gesetzt
                                 cpu.vic.fgcollision |= spriteBit;
                                 pixel = 0;
                             }
-                        } else {          // MDP = 0
+                        } else {          // MxDP = 0
                             if(chr & 0x80) {
                                 cpu.vic.fgcollision |= spriteBit;
                             } //Vordergrundpixel ist gesetzt
@@ -1216,19 +1412,58 @@ static void mode5(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 }
 
 /*****************************************************************************************************/
-static void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode6(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Ungültiger Bitmap-Modus 1 (ECM/BMM/MCM=1/1/0)
+        3.7.3.7. Invalid bitmap mode 1 (ECM/BMM/MCM=1/1/0)
+        --------------------------------------------------
 
-      Dieser Modus erzeugt nur ebenfalls nur ein schwarzes Bild, die Pixel lassen
-      sich allerdings auch hier mit dem Spritekollisionstrick auslesen.
+        This mode also only displays a black screen, but the pixels can also be
+        read out with the sprite collision trick.
 
-      Der Aufbau der Grafik ist im Prinzip wie im Standard-Bitmap-Modus, aber die
-      Bits 9 und 10 der g-Adressen sind wegen dem gesetzten ECM-Bit immer Null,
-      entsprechend besteht auch die Grafik - grob gesagt - aus vier
-      "Abschnitten", die jeweils viermal wiederholt dargestellt werden.
+        The structure of the graphics is basically as in standard bitmap mode, but
+        the bits 9 and 10 of the g-addresses are always zero due to the set ECM bit
+        and so the graphics is - roughly said - made up of four "sections" that are
+        each repeated four times.
 
-    */
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |                           unused                          |
+         +-----------------------------------------------------------+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13| VC9| VC8|  0 |  0 | VC5| VC4| VC3| VC2| VC1| VC0| RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         8 pixels (1 bit/pixel)        |
+         |                                       |
+         | "0": Black (background)               |
+         | "1": Black (foreground)               |
+         +---------------------------------------+
+     */
 
     uint8_t chr, pixel;
     uint8_t x = 0;
@@ -1246,16 +1481,15 @@ static void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
             unsigned m = min(8, pe - p);
 
             for(unsigned i = 0; i < m; i++) {
-                int spriteLineData = *spl;
-                *spl++ = 0;
+                uint16_t spriteLineData = *spl++;
 
                 chr = chr << 1;
 
                 if(spriteLineData) {     // Sprite: Ja
                     /*
                        Sprite-Prioritäten (Anzeige)
-                       MDP = 1: Grafikhintergrund, Sprite, Vordergrund
-                       MDP = 0: Grafikhintergung, Vordergrund, Sprite
+                       MxDP = 1: Grafikhintergrund, Sprite, Vordergrund
+                       MxDP = 0: Grafikhintergung, Vordergrund, Sprite
 
                        Kollision:
                        Eine Kollision zwischen Sprites und anderen Grafikdaten wird erkannt,
@@ -1267,12 +1501,12 @@ static void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     pixel = spritePixelFromLineData(spriteLineData);
 
-                    if(spritePriority) {   // MDP = 1
+                    if(spritePriority) {   // MxDP = 1
                         if(chr & 0x80) { //Vordergrundpixel ist gesetzt
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = 0;
                         }
-                    } else {            // MDP = 0
+                    } else {            // MxDP = 0
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spriteBit;
                         } //Vordergrundpixel ist gesetzt
@@ -1336,20 +1570,60 @@ static void mode6(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 }
 
 /*****************************************************************************************************/
-static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc) {
+static void mode7(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc) {
     /*
-      Ungültiger Bitmap-Modus 2 (ECM/BMM/MCM=1/1/1)
+        3.7.3.8. Invalid bitmap mode 2 (ECM/BMM/MCM=1/1/1)
+        --------------------------------------------------
 
-      Der letzte ungültige Modus liefert auch ein schwarzes Bild, das sich jedoch
-      genauso mit Hilfe der Sprite-Grafik-Kollisionen "abtasten" läßt.
+        The last invalid mode also creates a black screen but it can also be
+        "scanned" with sprite-graphics collisions.
 
-      Der Aufbau der Grafik ist im Prinzip wie im Multicolor-Bitmap-Modus, aber
-      die Bits 9 und 10 der g-Adressen sind wegen dem gesetzten ECM-Bit immer
-      Null, was sich in der Darstellung genauso wie beim ersten ungültigen
-      Bitmap-Modus wiederspiegelt. Die Bitkombination "01" wird wie gewohnt zum
-      Hintergrund gezählt.
+        The structure of the graphics is basically as in multicolor bitmap mode,
+        but the bits 9 and 10 of the g-addresses are always zero due to the set ECM
+        bit, with the same results as in the first invalid bitmap mode. As usual,
+        the bit combination "01" is part of the background.
 
-    */
+        c-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |VM13|VM12|VM11|VM10| VC9| VC8| VC7| VC6| VC5| VC4| VC3| VC2| VC1| VC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+
+         |                           unused                          |
+         +-----------------------------------------------------------+
+
+        g-access
+
+         Addresses
+
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+         |CB13| VC9| VC8|  0 |  0 | VC5| VC4| VC3| VC2| VC1| VC0| RC2| RC1| RC0|
+         +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+
+         Data
+
+         +----+----+----+----+----+----+----+----+
+         |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+         +----+----+----+----+----+----+----+----+
+         |         4 pixels (2 bits/pixel)       |
+         |                                       |
+         | "00": Black (background)              |
+         | "01": Black (background)              |
+         | "10": Black (foreground)              |
+         | "11": Black (foreground)              |
+         +---------------------------------------+
+     */
 
     uint8_t chr;
     uint8_t x = 0;
@@ -1368,9 +1642,7 @@ static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                 chr = chr << 2;
 
-                int spriteLineData = *spl;
-
-                *spl++ = 0;
+                uint16_t spriteLineData = *spl++;
 
                 if(spriteLineData) {    // Sprite: Ja
                     uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -1378,12 +1650,12 @@ static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     pixel = spritePixelFromLineData(spriteLineData);
 
-                    if(spritePriority) {  // MDP = 1
+                    if(spritePriority) {  // MxDP = 1
                         if(chr & 0x80) {  //Vordergrundpixel ist gesetzt
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = 0;
                         }
-                    } else {          // MDP = 0
+                    } else {          // MxDP = 0
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spriteBit;
                         } //Vordergundpixel ist gesetzt
@@ -1396,8 +1668,7 @@ static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                 if(p >= pe) { break; }
 
-                spriteLineData = *spl;
-                *spl++ = 0;
+                spriteLineData = *spl++;
 
                 if(spriteLineData) {    // Sprite: Ja
                     uint8_t spriteBit = spriteBitFromLineData(spriteLineData);
@@ -1405,12 +1676,12 @@ static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 
                     pixel = spritePixelFromLineData(spriteLineData);
 
-                    if(spritePriority) {  // MDP = 1
+                    if(spritePriority) {  // MxDP = 1
                         if(chr & 0x80) {  //Vordergrundpixel ist gesetzt
                             cpu.vic.fgcollision |= spriteBit;
                             pixel = 0;
                         }
-                    } else {          // MDP = 0
+                    } else {          // MxDP = 0
                         if(chr & 0x80) {
                             cpu.vic.fgcollision |= spriteBit;
                         } //Vordergundpixel ist gesetzt
@@ -1477,7 +1748,7 @@ static void mode7(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc)
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-typedef void (*modes_t)(tpixel *p, const tpixel *pe, uint16_t *spl, const uint16_t vc); //Funktionspointer
+using modes_t = void (*)(tpixel *p, const tpixel *pe, uint16_t const *spl, const uint16_t vc); //Funktionspointer
 
 static const modes_t modes[8] = {mode0, mode1, mode2, mode3, mode4, mode5, mode6, mode7};
 
@@ -1493,10 +1764,6 @@ void tvic::render() {
     /*****************************************************************************************************/
     /* Linecounter ***************************************************************************************/
     /*****************************************************************************************************/
-    /*
-      ?PEEK(678) NTSC =0
-      ?PEEK(678) PAL = 1
-    */
 
     if(cpu.vic.rasterLine >= LINECNT) {
         //reSID sound needs much time - too much to keep everything in sync and with stable refreshrate
@@ -1525,27 +1792,18 @@ void tvic::render() {
     /* Badlines ******************************************************************************************/
     /*****************************************************************************************************/
     /*
-      Ein Bad-Line-Zustand liegt in einem beliebigen Taktzyklus vor, wenn an der
-      negativen Flanke von ø0 zu Beginn des Zyklus RASTER >= $30 und RASTER <=
-      $f7 und die unteren drei Bits von RASTER mit YSCROLL übereinstimmen und in
-      einem beliebigen Zyklus von Rasterzeile $30 das DEN-Bit gesetzt war.
-
-      (default 3)
-      yscroll : POKE 53265, PEEK(53265) AND 248 OR 1:POKE 1024,0
-      yscroll : poke 53265, peek(53265) and 248 or 1
-
-      DEN : POKE 53265, PEEK(53265) AND 224 Bildschirm aus
-
-      Die einzige Verwendung von YSCROLL ist der Vergleich mit rasterLine in der Badline
-
+        A Bad Line Condition is given at any arbitrary clock cycle, if at the
+        negative edge of ø0 at the beginning of the cycle RASTER >= $30 and RASTER
+        <= $f7 and the lower three bits of RASTER are equal to YSCROLL and if the
+        DEN bit was set during an arbitrary cycle of raster line $30.
     */
 
     if(rasterLine == 0x30) { cpu.vic.denLatch |= cpu.vic.r.DEN; }
 
     /* 3.7.2
-      2. In der ersten Phase von Zyklus 14 jeder Zeile wird VC mit VCBASE geladen
-       (VCBASE->VC) und VMLI gelöscht. Wenn zu diesem Zeitpunkt ein
-       Bad-Line-Zustand vorliegt, wird zusätzlich RC auf Null gesetzt.
+        2. In the first phase of cycle 14 of each line, VC is loaded from VCBASE
+           (VCBASE->VC) and VMLI is cleared. If there is a Bad Line Condition in
+           this phase, RC is also reset to zero.
     */
 
     vc = cpu.vic.vcbase;
@@ -1574,13 +1832,11 @@ void tvic::render() {
     cpu_clock(ADDITIONALCYCLES);
 #endif
 
-    //cpu.vic.videomatrix =  cpu.vic.bank + (unsigned)(cpu.vic.R[VIC_VM_CB] & VIC_VM_CB_VM_MASK) * 64;
-
-    /* Rand oben /unten **********************************************************************************/
     /*
-      RSEL  Höhe des Anzeigefensters  Erste Zeile   Letzte Zeile
-      0 24 Textzeilen/192 Pixel 55 ($37)  246 ($f6) = 192 sichtbare Zeilen, der Rest ist Rand oder unsichtbar
-      1 25 Textzeilen/200 Pixel 51 ($33)  250 ($fa) = 200 sichtbare Zeilen, der Rest ist Rand oder unsichtbar
+        RSEL|  Display window height   | First line  | Last line
+         ----+--------------------------+-------------+----------
+           0 | 24 text lines/192 pixels |   55 ($37)  | 246 ($f6)
+           1 | 25 text lines/200 pixels |   51 ($33)  | 250 ($fa)
     */
 
     if(cpu.vic.borderFlag) {
@@ -1620,10 +1876,6 @@ void tvic::render() {
     /* DISPLAY *******************************************************************************************/
     /*****************************************************************************************************/
 
-
-    //max_x =  (!cpu.vic.CSEL) ? 40:38;
-    //X-Scrolling:
-
     xscroll = cpu.vic.r.XSCROLL;
 
     if(xscroll > 0) {
@@ -1656,74 +1908,73 @@ void tvic::render() {
         vc = (vc + 40) & 0x3ff;
     } else {
         /*
-  3.7.3.9. Idle-Zustand
-  ---------------------
+            3.7.3.9. Idle state
+            -------------------
 
-  Im Idle-Zustand liest der VIC die Grafikdaten von Adresse $3fff (bzw. $39ff
-  bei gesetztem ECM-Bit) und stellt sie im ausgewählten Grafikmodus dar,
-  wobei aber die Videomatrix-Daten (normalerweise in den c-Zugriffen gelesen)
-  nur aus "0"-Bits bestehen. Es wird also immer wiederholt das Byte an
-  Adresse $3fff/$39ff ausgegeben.
+            In idle state, the VIC reads the graphics data from address $3fff (resp.
+            $39ff if the ECM bit is set) and displays it in the selected graphics mode,
+            but with the video matrix data (normally read in the c-accesses) being all
+            "0" bits. So the byte at address $3fff/$39ff is output repeatedly.
 
-  c-Zugriff
+            c-access
 
-   Es werden keine c-Zugriffe ausgeführt.
+             No c-accesses occur.
 
-   Daten
+             Data
 
-   +----+----+----+----+----+----+----+----+----+----+----+----+
-   | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-   +----+----+----+----+----+----+----+----+----+----+----+----+
-   |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |
-   +----+----+----+----+----+----+----+----+----+----+----+----+
+             +----+----+----+----+----+----+----+----+----+----+----+----+
+             | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+             +----+----+----+----+----+----+----+----+----+----+----+----+
+             |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |  0 |
+             +----+----+----+----+----+----+----+----+----+----+----+----+
 
-  g-Zugriff
+            g-access
 
-   Adressen (ECM=0)
+             Addresses (ECM=0)
 
-   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-   | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-   |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |
-   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+             +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+             | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+             +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+             |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |
+             +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 
-   Adressen (ECM=1)
+             Addresses (ECM=1)
 
-   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-   | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-   |  1 |  1 |  1 |  0 |  0 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |
-   +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+             +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+             | 13 | 12 | 11 | 10 |  9 |  8 |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+             +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
+             |  1 |  1 |  1 |  0 |  0 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |  1 |
+             +----+----+----+----+----+----+----+----+----+----+----+----+----+----+
 
-   Daten
+             Data
 
-   +----+----+----+----+----+----+----+----+
-   |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
-   +----+----+----+----+----+----+----+----+
-   |         8 Pixel (1 Bit/Pixel)         | Standard-Textmodus/
-   |                                       | Multicolor-Textmodus/
-   | "0": Hintergrundfarbe 0 ($d021)       | ECM-Textmodus
-   | "1": Schwarz                          |
-   +---------------------------------------+
-   |         8 Pixel (1 Bit/Pixel)         | Standard-Bitmap-Modus/
-   |                                       | Ungültiger Textmodus/
-   | "0": Schwarz (Hintergrund)            | Ungültiger Bitmap-Modus 1
-   | "1": Schwarz (Vordergrund)            |
-   +---------------------------------------+
-   |         4 Pixel (2 Bit/Pixel)         | Multicolor-Bitmap-Modus
-   |                                       |
-   | "00": Hintergrundfarbe 0 ($d021)      |
-   | "01": Schwarz (Hintergrund)           |
-   | "10": Schwarz (Vordergrund)           |
-   | "11": Schwarz (Vordergrund)           |
-   +---------------------------------------+
-   |         4 Pixel (2 Bit/Pixel)         | Ungültiger Bitmap-Modus 2
-   |                                       |
-   | "00": Schwarz (Hintergrund)           |
-   | "01": Schwarz (Hintergrund)           |
-   | "10": Schwarz (Vordergrund)           |
-   | "11": Schwarz (Vordergrund)           |
-   +---------------------------------------+
+             +----+----+----+----+----+----+----+----+
+             |  7 |  6 |  5 |  4 |  3 |  2 |  1 |  0 |
+             +----+----+----+----+----+----+----+----+
+             |         8 pixels (1 bit/pixel)        | Standard text mode/
+             |                                       | Multicolor text mode/
+             | "0": Background color 0 ($d021)       | ECM text mode
+             | "1": Black                            |
+             +---------------------------------------+
+             |         8 pixels (1 bit/pixel)        | Standard bitmap mode/
+             |                                       | Invalid text mode/
+             | "0": Black (background)               | Invalid bitmap mode 1
+             | "1": Black (foreground)               |
+             +---------------------------------------+
+             |         4 pixels (2 bits/pixel)       | Multicolor bitmap mode
+             |                                       |
+             | "00": Background color 0 ($d021)      |
+             | "01": Black (background)              |
+             | "10": Black (foreground)              |
+             | "11": Black (foreground)              |
+             +---------------------------------------+
+             |         4 pixels (2 bits/pixel)       | Invalid bitmap mode 2
+             |                                       |
+             | "00": Black (background)              |
+             | "01": Black (background)              |
+             | "10": Black (foreground)              |
+             | "11": Black (foreground)              |
+             +---------------------------------------+
   */
         //Modes 1 & 3
         if(mode == 1 || mode == 3) {
@@ -1734,12 +1985,12 @@ void tvic::render() {
     }
 
     /*
-      Bei den MBC- und MMC-Interrupts löst jeweils nur die erste Kollision einen
-      Interrupt aus (d.h. wenn die Kollisionsregister $d01e bzw. $d01f vor der
-      Kollision den Inhalt Null hatten). Um nach einer Kollision weitere
-      Interrupts auszulösen, muß das betreffende Register erst durch Auslesen
-      gelöscht werden.
-    */
+        For the MBC and MMC interrupts, only the first collision will trigger an
+        interrupt (i.e. if the collision registers $d01e resp. $d01f contained the
+        value zero before the collision). To trigger further interrupts after a
+        collision, the concerning register has to be cleared first by reading from
+        it.
+     */
 
     if(cpu.vic.fgcollision) {
         if(cpu.vic.r.MD == 0) {
@@ -1806,11 +2057,12 @@ void tvic::render() {
     noDisplayIncRC:
 
     /* 3.7.2
-      5. In der ersten Phase von Zyklus 58 wird geprüft, ob RC=7 ist. Wenn ja,
-       geht die Videologik in den Idle-Zustand und VCBASE wird mit VC geladen
-       (VC->VCBASE). Ist die Videologik danach im Display-Zustand (liegt ein
-       Bad-Line-Zustand vor, ist dies immer der Fall), wird RC erhöht.
+        5. In the first phase of cycle 58, the VIC checks if RC=7. If so, the video
+           logic goes to idle state and VCBASE is loaded from VC (VC->VCBASE). If
+           the video logic is in display state afterwards (this is always the case
+           if there is a Bad Line Condition), RC is incremented.
     */
+
     if(cpu.vic.rc == 7) {
         cpu.vic.idle = 1;
         cpu.vic.vcbase = vc;
@@ -1966,9 +2218,11 @@ void tvic::render() {
                             }
                         }
                     } else { // MULTICOLOR
-                        /* Im Mehrfarbenmodus (Multicolor-Modus) bekommen alle Sprites zwei zusätzliche gemeinsame Farben.
-                          Die horizontale Auflösung wird von 24 auf 12 halbiert, da bei der Sprite-Definition jeweils zwei Bits zusammengefasst werden.
-                        */
+                        /*
+                            In multicolor mode, two adjacent bits form one pixel, thus reducing the
+                            resolution of the sprite to 12×21 (the pixels are twice as wide).
+                         */
+
                         uint16_t colors[4];
 
                         // color 0 is transparent
@@ -2145,10 +2399,11 @@ void tvic::renderSimple() {
 
     /* Rand oben /unten **********************************************************************************/
     /*
-      RSEL  Höhe des Anzeigefensters  Erste Zeile   Letzte Zeile
-      0 24 Textzeilen/192 Pixel 55 ($37)  246 ($f6) = 192 sichtbare Zeilen, der Rest ist Rand oder unsichtbar
-      1 25 Textzeilen/200 Pixel 51 ($33)  250 ($fa) = 200 sichtbare Zeilen, der Rest ist Rand oder unsichtbar
-    */
+        RSEL|  Display window height   | First line  | Last line
+         ----+--------------------------+-------------+----------
+           0 | 24 text lines/192 pixels |   55 ($37)  | 246 ($f6)
+           1 | 25 text lines/200 pixels |   51 ($33)  | 250 ($fa)
+     */
 
     if(cpu.vic.borderFlag) {
         int firstLine = (cpu.vic.r.RSEL) ? 0x33 : 0x37;
