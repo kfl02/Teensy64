@@ -47,7 +47,8 @@ static char buffer[2];
 void patchLOAD() {
     int device;
     int secondaryAddress;
-    uint16_t addr, size;
+    uint16_t addr;
+    uint16_t size;
 
     Serial.println("Patched LOAD");
     device = cpu.RAM[0xBA];
@@ -69,7 +70,9 @@ void patchLOAD() {
         Serial.println(DIRECTORY);
         Serial.println();
         file = SD.open(DIRECTORY);
-        int blocks, start, len;
+        int blocks;
+        uint16_t start;
+        int len;
         addr = cpu.RAM[0x2C] * 256 + cpu.RAM[0x2B];
 
         /*first line of BASIC listing */
@@ -234,7 +237,8 @@ void patchLOAD() {
 void patchSAVE() {
     int device;
     int secondaryAddress;
-    uint16_t addr, size;
+    uint16_t addr;
+    uint16_t size;
 
     Serial.println("Patched SAVE");
     device = cpu.RAM[0xBA];

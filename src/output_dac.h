@@ -39,8 +39,8 @@ class AudioOutputAnalog : public AudioStream {
         begin();
     }
 
-    virtual void update(void);
-    void begin(void);
+    void update(void) final;
+    static void begin(void);
     static void analogReference(int ref);
 
     static DMAChannel dma;

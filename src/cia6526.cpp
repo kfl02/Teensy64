@@ -38,11 +38,11 @@
 #include "cia6526.h"
 
 inline uint32_t CIA6526::tod() const {
-    return TODfrozen ? TODfrozenMillis : (uint32_t)( (millis() - TOD) % DAY_IN_MILLISECONDS);
+    return TODfrozen ? TODfrozenMillis : ( (millis() - TOD) % DAY_IN_MILLISECONDS);
 }
 
 void CIA6526::setAlarmTime() {
-    TODalarm = w.tod10ths + w.todsec * 10l + w.todmin * 10l * 60l + w.todhr * 10l * 60l * 60l;
+    TODalarm = w.tod10ths + w.todsec * 10L + w.todmin * 10L * 60L + w.todhr * 10L * 60L * 60L;
 }
 
 void CIA6526::write(uint32_t address, uint8_t value) {
@@ -79,10 +79,10 @@ void CIA6526::write(uint32_t address, uint8_t value) {
                 setAlarmTime();
             } else {
                 TODstopped = false;
-                TOD = (uint32_t) (millis() % DAY_IN_MILLISECONDS) -
-                       (value * 100l + r.todsec * 10l * 100l +
-                       r.todmin * 10l * 100l * 60l +
-                       r.todhr * 10l * 100l * 60l * 60l);
+                TOD = (millis() % DAY_IN_MILLISECONDS) -
+                       (value * 100L + r.todsec * 10L * 100L +
+                       r.todmin * 10L * 100L * 60L +
+                       r.todhr * 10L * 100L * 60L * 60L);
             }
             break;
 
@@ -208,8 +208,8 @@ uint8_t CIA6526::read(uint32_t address) {
     return ret;
 }
 
-void CIA6526::clock(int clk) {
-    int32_t t;
+void CIA6526::clock(uint16_t clk) {
+    uint16_t t;
     uint8_t icr = r.icr;
     uint8_t cra = r.cra;
     uint8_t crb = r.crb;

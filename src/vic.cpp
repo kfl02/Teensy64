@@ -45,7 +45,7 @@
   - optimize more
 */
 
-#include "Teensy64.h"
+#include "teensy64.h"
 #include "vic.h"
 #include "vic_palette.h"
 
@@ -2200,15 +2200,17 @@ void tvic::renderSimple() {
 /*****************************************************************************************************/
 /*****************************************************************************************************/
 
-void tvic::adrchange() {
+void tvic::applyAdressChange() {
     uint8_t r18 = cpu.vic.R[VIC_VM_CB];
     cpu.vic.videomatrix = cpu.vic.bank + (unsigned) (r18 & VIC_VM_CB_VM_MASK) * 64;
 
     unsigned charsetAddr = r18 & VIC_VM_CB_CB_MASK;
     if((cpu.vic.bank & 0x4000) == 0) {
-        if(charsetAddr == 0x04) { cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters); }
-        else if(charsetAddr == 0x06) { cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters) + 0x800; }
-        else {
+        if(charsetAddr == 0x04) {
+            cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters);
+        } else if(charsetAddr == 0x06) {
+            cpu.vic.charsetPtrBase = ((uint8_t *) &rom_characters) + 0x800;
+        } else {
             cpu.vic.charsetPtrBase = &cpu.RAM[charsetAddr * 0x400 + cpu.vic.bank];
         }
     } else {
@@ -2243,7 +2245,7 @@ void tvic::write(uint32_t address, uint8_t value) {
             if(cpu.vic.badline) {
                 cpu.vic.idle = 0;
             }
-            adrchange();
+            applyAdressChange();
 
             break;
 
@@ -2254,7 +2256,7 @@ void tvic::write(uint32_t address, uint8_t value) {
 
         case VIC_VM_CB:
             cpu.vic.R[VIC_VM_CB] = value;
-            adrchange();
+            applyAdressChange();
             break;
 
         case VIC_IRQST:
@@ -2372,7 +2374,7 @@ void tvic::reset() {
     cpu.RAM[0x39FF + 49152] = 0x0;
     cpu.RAM[0x3FFF + 49152] = 0x0;
 
-    adrchange();
+    applyAdressChange();
 }
 
 void tvic::updatePalette(int n) {

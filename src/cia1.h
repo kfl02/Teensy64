@@ -36,7 +36,7 @@ struct tcia {
     uint8_t TODfrozen;
 };
 
-void cia1_clock(int clk) __attribute__ ((hot));
+void cia1_clock(uint16_t clk) __attribute__ ((hot));
 void cia1_checkRTCAlarm() __attribute__ ((hot));
 void cia1_write(uint32_t address, uint8_t value) __attribute__ ((hot));
 uint8_t cia1_read(uint32_t address) __attribute__ ((hot));

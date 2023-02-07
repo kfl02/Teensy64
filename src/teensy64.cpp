@@ -34,12 +34,12 @@
 */
 
 #include <Arduino.h>
-#include "Teensy64.h"
+#include "teensy64.h"
+#include "vic_palette.h"
 
 ILI9341_t3n tft = ILI9341_t3n(TFT_CS, TFT_DC, TFT_RST, TFT_MOSI, TFT_SCLK, TFT_MISO);
-extern uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
 
-#include "vic_palette.h"
+extern uint16_t screen[ILI9341_TFTHEIGHT][ILI9341_TFTWIDTH];
 
 AudioPlaySID playSID;
 AudioOutputAnalog audioout;
@@ -70,18 +70,17 @@ void oneRasterLine() {
     static unsigned short lc = 1;
 
     while(true) {
-
         cpu.lineStartTime = ARM_DWT_CYCCNT;
         cpu.lineCycles = cpu.lineCyclesAbs = 0;
 
         if(!cpu.exactTiming) {
-            cpu.vic.render();
+            tvic::render();
         } else {
-            cpu.vic.renderSimple();
+            tvic::renderSimple();
         }
 
         if(--lc == 0) {
-            lc = LINEFREQ / 10; // 10Hz
+            lc = (unsigned short)LINEFREQ / 10; // 10Hz
             cia1_checkRTCAlarm();
             cia2_checkRTCAlarm();
         }
@@ -92,7 +91,7 @@ void oneRasterLine() {
             cpu_disableExactTiming();
             break;
         }
-    };
+    }
 }
 
 DMAChannel dma_gpio(false);
@@ -116,7 +115,7 @@ void setupGPIO_DMA() {
 
     //Audio-DAC is triggered with PDB(NO-VGA) or FTM-Channel 7
     //Use The Audio-DMA a trigger for this DMA-Channel:
-    dma_gpio.triggerAtCompletionOf(audioout.dma);
+    dma_gpio.triggerAtCompletionOf(AudioOutputAnalog::dma);
     dma_gpio.enable();
 }
 
@@ -153,13 +152,13 @@ void initMachine() {
     pinMode(PIN_RESET, OUTPUT_OPENDRAIN);
     digitalWriteFast(PIN_RESET, 1);
 
-    LED_INIT;
-    LED_ON;
+    LED_INIT();
+    LED_ON();
     disableEventResponder();
 
     Serial.begin(9600);
     Serial.println("Init");
-    myusb.begin();
+    USBHost::begin();
 
     tft.begin(144000000);
     tft.setRotation(3);
@@ -178,9 +177,9 @@ void initMachine() {
 
     delay(250);
 
-    while(!Serial && ((millis() - m) <= 1500)) {}
+    while(!Serial && ((millis() - m) <= 1500));
 
-    LED_OFF;
+    LED_OFF();
 
     Serial.println("=============================\n");
     Serial.println("Teensy64 v." VERSION " " __DATE__ " " __TIME__ "\n");
@@ -224,7 +223,7 @@ void initMachine() {
 
     resetExternal();
 
-    while((millis() - m) <= 1500) {}
+    while((millis() - m) <= 1500);
 
     setupGPIO_DMA();
 
@@ -263,7 +262,7 @@ void yield(void) {
 
     do_sendString();
 
-    myusb.Task();
+    USBHost::Task();
 
     running = 0;
 }

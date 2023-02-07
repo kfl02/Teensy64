@@ -41,13 +41,11 @@
 #define tod()       (cpu.cia1.TODfrozen ? cpu.cia1.TODfrozenMillis : (int)( (millis() - cpu.cia1.TOD) % 86400000l) )
 
 void cia1_setAlarmTime() {
-    cpu.cia1.TODAlarm = (cpu.cia1.W[CIA_TOD10THS] + cpu.cia1.W[CIA_TODSEC] * 10l + cpu.cia1.W[CIA_TODMIN] * 600l +
-                         cpu.cia1.W[CIA_TODHR] * 36000l
-    );
+    cpu.cia1.TODAlarm = cpu.cia1.W[CIA_TOD10THS] + cpu.cia1.W[CIA_TODSEC] * 10L + cpu.cia1.W[CIA_TODMIN] * 600L +
+                        cpu.cia1.W[CIA_TODHR] * 36000L;
 }
 
 void cia1_write(uint32_t address, uint8_t value) {
-
     address &= 0x0F;
 
     switch(address) {
@@ -86,9 +84,9 @@ void cia1_write(uint32_t address, uint8_t value) {
                 cpu.cia1.TODstopped = 0;
 
                 //Translate set Time to TOD:
-                cpu.cia1.TOD = (int) (millis() % 86400000l) -
-                               (value * 100 + cpu.cia1.R[CIA_TODSEC] * 1000l + cpu.cia1.R[CIA_TODMIN] * 60000l +
-                                cpu.cia1.R[CIA_TODHR] * 3600000l
+                cpu.cia1.TOD = (int) (millis() % 86400000L) -
+                               (value * 100 + cpu.cia1.R[CIA_TODSEC] * 1000L + cpu.cia1.R[CIA_TODMIN] * 60000L +
+                                cpu.cia1.R[CIA_TODHR] * 3600000L
                                );
             }
             break;
@@ -277,22 +275,18 @@ underflow_b:
 }
 #else
 
-void cia1_clock(int clk) {
-
-    int32_t t;
+void cia1_clock(uint16_t clk) {
+    uint16_t t;
     uint32_t regFEDC = cpu.cia1.R32[CIA_SDR / 4];
 
-    // TIMER A
-    //if (((cpu.cia1.R[CIA_CRA] & 0x01)>0) && ((cpu.cia1.R[CIA_CRA] & 0x20)==0)) {
 
-    //if ((regFEDC & 0x210000)==0x10000) {
     if(((regFEDC >> 16) & 0x21) == 0x1) {
         t = cpu.cia1.R16[CIA_TALO / 2];
 
         if(clk > t) { //underflow ?
             t = cpu.cia1.W16[CIA_TALO / 2] - (clk - t);
             regFEDC |= 0x00000100;
-            if((regFEDC & 0x00080000)) { regFEDC &= 0xfffeffff; } //One-Shot
+            if(regFEDC & 0x00080000) { regFEDC &= 0xfffeffff; } //One-Shot
         } else {
             t -= clk;
         }
@@ -302,9 +296,7 @@ void cia1_clock(int clk) {
 
 
     // TIMER B
-    //TODO: Prüfen ob das funktioniert
     if(regFEDC & 0x01000000) {
-        //uint16_t quelle = (cpu.cia1.R[CIA_CRB]>>5) & 0x03;
         if((regFEDC & 0x60000000) == 0x40000000) {
 
             if(regFEDC & 0x00000100) { //unterlauf TimerA?
@@ -319,7 +311,7 @@ void cia1_clock(int clk) {
         if(clk > t) { //underflow ?
             t = cpu.cia1.W16[CIA_TBLO / 2] - (clk - t);
             regFEDC |= 0x00000200;
-            if((regFEDC & 0x08000000)) { regFEDC &= 0xfeffffff; }
+            if(regFEDC & 0x08000000) { regFEDC &= 0xfeffffff; }
         } else {
             t -= clk;
         }
@@ -340,7 +332,7 @@ void cia1_clock(int clk) {
 #endif
 
 void cia1_checkRTCAlarm() { // call @ 1/10 sec interval minimum
-    if((uint32_t) (millis() - cpu.cia1.TOD) % 86400000l / 100 == cpu.cia1.TODAlarm) {
+    if((millis() - cpu.cia1.TOD) % 86400000L / 100 == cpu.cia1.TODAlarm) {
         cpu.cia1.R[CIA_ICR] |= CIA_ICR_ALRM | (cpu.cia1.W[CIA_ICR] & CIA_ICR_ALRM ? CIA_ICR_IR : 0);
     }
 }

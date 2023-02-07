@@ -35,7 +35,7 @@
 
 class c64USBKeyboard : public USBDriver { /* , public USBHIDInput */
 public:
-    typedef union {
+    using KBDLeds_t = union {
         struct {
             uint8_t numLock: 1;
             uint8_t capsLock: 1;
@@ -45,34 +45,33 @@ public:
             uint8_t reserved: 3;
         };
         uint8_t byte;
-    } KBDLeds_t;
-public:
-    c64USBKeyboard(USBHost &host) {
+    };
+    c64USBKeyboard(USBHost const &) {
         init();
     }
 
-    c64USBKeyboard(USBHost *host) {
+    c64USBKeyboard(USBHost const *) {
         init();
     }
 
     void attachC64(void (*keyboardmatrix)(void *keys));//FB
     void LEDS(uint8_t leds);
 
-    uint8_t LEDS() {
+    uint8_t LEDS() const {
         return leds_.byte;
     }
 
     void updateLEDS(void);
 
-    bool numLock() {
+    bool numLock() const {
         return leds_.numLock;
     }
 
-    bool capsLock() {
+    bool capsLock() const {
         return leds_.capsLock;
     }
 
-    bool scrollLock() {
+    bool scrollLock() const {
         return leds_.scrollLock;
     }
 
@@ -81,9 +80,9 @@ public:
     void scrollLock(bool f);
 
 protected:
-    virtual bool claim(Device_t *device, int type, const uint8_t *descriptors, uint32_t len);
-    virtual void control(const Transfer_t *transfer);
-    virtual void disconnect();
+    bool claim(Device_t *device, int type, const uint8_t *descriptors, uint32_t len) final;
+    void control(const Transfer_t *transfer) final;
+    void disconnect() final;
     static void callback(const Transfer_t *transfer);
     void new_data(const Transfer_t *transfer);
     void init();

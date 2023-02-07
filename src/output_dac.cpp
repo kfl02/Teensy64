@@ -79,7 +79,7 @@ void AudioOutputAnalog::begin() {
 
     // slowly ramp up to DC voltage, approx 1/4 second
     for(int16_t i = 0; i <= 2048; i += 8) {
-        *(int16_t * ) & (DAC0_DAT0L) = i;
+        *(volatile int16_t * ) & (DAC0_DAT0L) = i;
 
         delay(1);
     }
@@ -159,7 +159,8 @@ void AudioOutputAnalog::update() {
 // can we output a 2X oversampled output, for easier filtering?
 
 void AudioOutputAnalog::isr() {
-    const int16_t *src, *end;
+    const int16_t *src;
+    const int16_t *end;
     int16_t *dest;
     audio_block_t *block;
     uint32_t saddr;
@@ -187,7 +188,7 @@ void AudioOutputAnalog::isr() {
 
         do {
             // TODO: this should probably dither
-            *dest++ = (((*src++) + 32768) >> AudioOutputAnalog::volume);
+            *dest++ = (int16_t)(((*src++) + 32768) >> AudioOutputAnalog::volume);
         } while(dest < end);
 
         AudioStream::release(block);

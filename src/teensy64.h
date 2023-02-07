@@ -96,9 +96,9 @@ static const unsigned int ISR_PRIORITY_RASTERLINE = 255;
 
 //Pins
 
-#define LED_INIT  {pinMode(13,OUTPUT);}
-#define LED_ON    {digitalWriteFast(13,1);}
-#define LED_OFF   {digitalWriteFast(13,0);}
+#define LED_INIT()  pinMode(13,OUTPUT)
+#define LED_ON()    digitalWriteFast(13,1)
+#define LED_OFF()   digitalWriteFast(13,0)
 #define LED_TOGGLE  {GPIOC_PTOR=32;} // This toggles the Teensy Builtin LED pin 13
 
 //ILI9341

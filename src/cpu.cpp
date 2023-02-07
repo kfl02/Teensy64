@@ -45,7 +45,7 @@
  *****************************************************
 */
 #include <cstdint>
-#include "Teensy64.h"
+#include "teensy64.h"
 #include "cpu.h"
 #include "cia6526.h"
 
@@ -83,7 +83,7 @@
 
 #define saveaccum(n)    cpu.a = (uint8_t)((n) & 0x00FF)
 
-#define UNSUPPORTED { Serial.println("Unsupported Opcode"); while(1){;} }
+#define UNSUPPORTED { Serial.println("Unsupported static"); while(1){;} }
 
 void logAddr(const uint32_t address, const uint8_t value, const uint8_t rw) {
     if(rw) { Serial.print("Write "); } else { Serial.print("Read "); }
@@ -100,32 +100,32 @@ void reset6502();
 
 static inline void cpu_irq();
 
-INLINEOP uint8_t read6502(uint32_t address) __attribute__ ((hot));
+static inline __attribute__((always_inline, flatten)) uint8_t read6502(uint32_t address) __attribute__ ((hot));
 
-INLINEOP uint8_t read6502(const uint32_t address) {
+static inline __attribute__((always_inline, flatten)) uint8_t read6502(const uint32_t address) {
     return (*cpu.plamap_r)[address >> 8](address);
 }
 
-INLINEOP uint8_t read6502ZP(uint32_t address) __attribute__ ((hot)); //Zeropage
-INLINEOP uint8_t read6502ZP(const uint32_t address) {
+static inline __attribute__((always_inline, flatten)) uint8_t read6502ZP(uint32_t address) __attribute__ ((hot)); //Zeropage
+static inline __attribute__((always_inline, flatten)) uint8_t read6502ZP(const uint32_t address) {
     return cpu.RAM[address & 0xff];
 }
 
 /* Ein Schreibzugriff auf einen ROM-Bereich speichert das Byte im „darunterliegenden” RAM. */
-INLINEOP void write6502(uint32_t address, const uint8_t value) __attribute__ ((hot));
+static inline __attribute__((always_inline, flatten)) void write6502(uint32_t address, uint8_t value) __attribute__ ((hot));
 
-INLINEOP void write6502(const uint32_t address, const uint8_t value) {
+static inline __attribute__((always_inline, flatten)) void write6502(const uint32_t address, const uint8_t value) {
     (*cpu.plamap_w)[address >> 8](address, value);
 }
 
 //a few general functions used by various other functions
-INLINEOP void push16(const uint16_t pushval) {
+static inline __attribute__((always_inline, flatten)) void push16(const uint16_t pushval) {
     cpu.RAM[BASE_STACK + cpu.sp] = (pushval >> 8) & 0xFF;
     cpu.RAM[BASE_STACK + ((cpu.sp - 1) & 0xFF)] = pushval & 0xFF;
     cpu.sp -= 2;
 }
 
-INLINEOP uint16_t pull16() {
+static inline __attribute__((always_inline, flatten)) uint16_t pull16() {
     uint16_t temp16;
 
     temp16 = cpu.RAM[BASE_STACK + ((cpu.sp + 1) & 0xFF)] |
@@ -135,11 +135,11 @@ INLINEOP uint16_t pull16() {
     return (temp16);
 }
 
-INLINEOP void push8(uint8_t pushval) {
+static inline __attribute__((always_inline, flatten)) void push8(uint8_t pushval) {
     cpu.RAM[BASE_STACK + (cpu.sp--)] = pushval;
 }
 
-INLINEOP uint8_t pull8() {
+static inline __attribute__((always_inline, flatten)) uint8_t pull8() {
     return cpu.RAM[BASE_STACK + (++cpu.sp)];
 }
 
@@ -147,44 +147,44 @@ INLINEOP uint8_t pull8() {
 /*addressing mode functions, calculates effective addresses                                                         */
 /********************************************************************************************************************/
 
-INLINEOP void imp() { //implied
+static inline __attribute__((always_inline, flatten)) void imp() { //implied
 }
 
-INLINEOP void acc() { //accumulator
+static inline __attribute__((always_inline, flatten)) void acc() { //accumulator
 }
 
-INLINEOP void imm() { //immediate
+static inline __attribute__((always_inline, flatten)) void imm() { //immediate
     cpu.ea = cpu.pc++;
 }
 
-INLINEOP void zp() { //zero-page
+static inline __attribute__((always_inline, flatten)) void zp() { //zero-page
     cpu.ea = read6502(cpu.pc++) & 0xFF;
 }
 
-INLINEOP void zpx() { //zero-page,X
+static inline __attribute__((always_inline, flatten)) void zpx() { //zero-page,X
     cpu.ea = (read6502(cpu.pc++) + cpu.x) & 0xFF; //zero-page wraparound
 }
 
-INLINEOP void zpy() { //zero-page,Y
+static inline __attribute__((always_inline, flatten)) void zpy() { //zero-page,Y
     cpu.ea = (read6502(cpu.pc++) + cpu.y) & 0xFF; //zero-page wraparound
 }
 
-INLINEOP void rel() { //relative for branch ops (8-bit immediate value, sign-extended)
+static inline __attribute__((always_inline, flatten)) void rel() { //relative for branch ops (8-bit immediate value, sign-extended)
     cpu.reladdr = read6502(cpu.pc++);
     if(cpu.reladdr & 0x80) { cpu.reladdr |= 0xFF00; }
 }
 
-INLINEOP void abso() { //absolute
+static inline __attribute__((always_inline, flatten)) void abso() { //absolute
     cpu.ea = read6502(cpu.pc) | (read6502(cpu.pc + 1) << 8);
     cpu.pc += 2;
 }
 
-INLINEOP void absx() { //absolute,X
+static inline __attribute__((always_inline, flatten)) void absx() { //absolute,X
     cpu.ea = (read6502(cpu.pc) | (read6502(cpu.pc + 1) << 8)) + cpu.x;
     cpu.pc += 2;
 }
 
-INLINEOP void absx_t() { //absolute,X with extra cycle
+static inline __attribute__((always_inline, flatten)) void absx_t() { //absolute,X with extra cycle
     uint16_t h = read6502(cpu.pc) + cpu.x;
 
     if(h & 0x100) { cpu.ticks += 1; }
@@ -193,12 +193,12 @@ INLINEOP void absx_t() { //absolute,X with extra cycle
     cpu.pc += 2;
 }
 
-INLINEOP void absy() { //absolute,Y
+static inline __attribute__((always_inline, flatten)) void absy() { //absolute,Y
     cpu.ea = (read6502(cpu.pc) + (read6502(cpu.pc + 1) << 8)) + cpu.y;
     cpu.pc += 2;
 }
 
-INLINEOP void absy_t() { //absolute,Y with extra cycle
+static inline __attribute__((always_inline, flatten)) void absy_t() { //absolute,Y with extra cycle
     uint16_t h = read6502(cpu.pc) + cpu.y;
 
     if(h & 0x100) { cpu.ticks += 1; }
@@ -207,8 +207,9 @@ INLINEOP void absy_t() { //absolute,Y with extra cycle
     cpu.pc += 2;
 }
 
-INLINEOP void ind() { //indirect
-    uint16_t eahelp, eahelp2;
+static inline __attribute__((always_inline, flatten)) void ind() { //indirect
+    uint16_t eahelp;
+    uint16_t eahelp2;
 
     eahelp = read6502(cpu.pc) | (read6502(cpu.pc + 1) << 8);
     eahelp2 = (eahelp & 0xFF00) | ((eahelp + 1) & 0x00FF); //replicate 6502 page-boundary wraparound bug
@@ -216,14 +217,14 @@ INLINEOP void ind() { //indirect
     cpu.pc += 2;
 }
 
-INLINEOP void indx() { // (indirect,X)
+static inline __attribute__((always_inline, flatten)) void indx() { // (indirect,X)
     uint32_t eahelp;
 
     eahelp = (read6502(cpu.pc++) + cpu.x) & 0xFF; //zero-page wraparound for table pointer
     cpu.ea = read6502ZP((uint8_t) eahelp) | (read6502ZP((uint8_t)(eahelp + 1)) << 8);
 }
 
-INLINEOP void indy() { // (zeropage indirect),Y
+static inline __attribute__((always_inline, flatten)) void indy() { // (zeropage indirect),Y
     uint8_t zp = read6502(cpu.pc++);
 
     cpu.ea = read6502ZP((uint16_t) zp++);
@@ -231,7 +232,7 @@ INLINEOP void indy() { // (zeropage indirect),Y
     cpu.ea += cpu.y;
 }
 
-INLINEOP void indy_t() { // (zeropage indirect),Y with extra cycle
+static inline __attribute__((always_inline, flatten)) void indy_t() { // (zeropage indirect),Y with extra cycle
     uint8_t zp = read6502(cpu.pc++);
     uint16_t h;
 
@@ -243,21 +244,21 @@ INLINEOP void indy_t() { // (zeropage indirect),Y with extra cycle
     cpu.ea = h + cpu.y;
 }
 
-INLINEOP uint32_t getvalue() __attribute__ ((hot));
+//static inline __attribute__((always_inline, flatten, hot)) uint32_t getvalue() __attribute__ ((hot));
 
-INLINEOP uint32_t getvalue() {
+static inline __attribute__((always_inline, flatten, hot)) uint32_t getvalue() {
     return read6502(cpu.ea);
 }
 
-INLINEOP uint32_t getvalueZP() __attribute__ ((hot));
+static inline __attribute__((always_inline, flatten)) uint32_t getvalueZP() __attribute__ ((hot));
 
-INLINEOP uint32_t getvalueZP() {
+static inline __attribute__((always_inline, flatten)) uint32_t getvalueZP() {
     return read6502ZP(cpu.ea);
 }
 
-INLINEOP void putvalue(uint8_t saveval)  __attribute__ ((hot));
+static inline __attribute__((always_inline, flatten)) void putvalue(uint8_t saveval)  __attribute__ ((hot));
 
-INLINEOP void putvalue(const uint8_t saveval) {
+static inline __attribute__((always_inline, flatten)) void putvalue(const uint8_t saveval) {
     write6502(cpu.ea, saveval);
 }
 
@@ -267,7 +268,7 @@ INLINEOP void putvalue(const uint8_t saveval) {
 /********************************************************************************************************************/
 
 /*
-Aliases used in other illegal opcode sources:
+Aliases used in other illegal static sources:
 
 SLO = ASO
 SRE = LSE
@@ -290,7 +291,7 @@ KIL = JAM, HLT
 }
 
 
-INLINEOP void _adc(unsigned data) {
+static inline __attribute__((always_inline, flatten)) void _adc(unsigned data) {
     unsigned tempval = data;
     unsigned temp;
 
@@ -341,7 +342,7 @@ INLINEOP void _adc(unsigned data) {
     saveaccum(temp);
 }
 
-INLINEOP void _sbc(unsigned data) {
+static inline __attribute__((always_inline, flatten)) void _sbc(unsigned data) {
     unsigned tempval = data;
     unsigned temp;
 
@@ -395,19 +396,19 @@ INLINEOP void _sbc(unsigned data) {
     }
 }
 
-INLINEOP void adc() {
+static inline __attribute__((always_inline, flatten)) void adc() {
     unsigned data = getvalue();
 
     _adc(data);
 }
 
-INLINEOP void adcZP() {
+static inline __attribute__((always_inline, flatten)) void adcZP() {
     unsigned data = getvalueZP();
 
     _adc(data);
 }
 
-INLINEOP void op_and() {
+static inline __attribute__((always_inline, flatten)) void op_and() {
     uint32_t result = cpu.a & getvalue();
 
     zerocalc(result);
@@ -415,7 +416,7 @@ INLINEOP void op_and() {
     saveaccum(result);
 }
 
-INLINEOP void op_andZP() {
+static inline __attribute__((always_inline, flatten)) void op_andZP() {
     uint32_t result = cpu.a & getvalueZP();
 
     zerocalc(result);
@@ -423,7 +424,7 @@ INLINEOP void op_andZP() {
     saveaccum(result);
 }
 
-INLINEOP void asl() {
+static inline __attribute__((always_inline, flatten)) void asl() {
     uint32_t result = getvalue();
 
     result <<= 1;
@@ -434,7 +435,7 @@ INLINEOP void asl() {
     putvalue(result);
 }
 
-INLINEOP void aslZP() {
+static inline __attribute__((always_inline, flatten)) void aslZP() {
     uint32_t result = getvalueZP();
 
     result <<= 1;
@@ -445,7 +446,7 @@ INLINEOP void aslZP() {
     putvalue(result);
 }
 
-INLINEOP void asla() {
+static inline __attribute__((always_inline, flatten)) void asla() {
     uint32_t result = cpu.a << 1;
 
     carrycalc(result);
@@ -454,7 +455,7 @@ INLINEOP void asla() {
     saveaccum(result);
 }
 
-INLINEOP void bcc() {
+static inline __attribute__((always_inline, flatten)) void bcc() {
     if((cpu.cpustatus & FLAG_CARRY) == 0) {
         uint32_t oldpc = cpu.pc;
 
@@ -468,7 +469,7 @@ INLINEOP void bcc() {
     }
 }
 
-INLINEOP void bcs() {
+static inline __attribute__((always_inline, flatten)) void bcs() {
     if((cpu.cpustatus & FLAG_CARRY) == FLAG_CARRY) {
         uint32_t oldpc = cpu.pc;
 
@@ -482,7 +483,7 @@ INLINEOP void bcs() {
     }
 }
 
-INLINEOP void beq() {
+static inline __attribute__((always_inline, flatten)) void beq() {
     if((cpu.cpustatus & FLAG_ZERO) == FLAG_ZERO) {
         uint32_t oldpc = cpu.pc;
 
@@ -496,7 +497,7 @@ INLINEOP void beq() {
     }
 }
 
-INLINEOP void op_bit() {
+static inline __attribute__((always_inline, flatten)) void op_bit() {
     unsigned value = getvalue();
 
     cpu.cpustatus = (cpu.cpustatus & ~(FLAG_SIGN | FLAG_OVERFLOW)) | (value & (FLAG_SIGN | FLAG_OVERFLOW));
@@ -508,7 +509,7 @@ INLINEOP void op_bit() {
     }
 }
 
-INLINEOP void op_bitZP() {
+static inline __attribute__((always_inline, flatten)) void op_bitZP() {
     unsigned value = getvalueZP();
 
     cpu.cpustatus = (cpu.cpustatus & ~(FLAG_SIGN | FLAG_OVERFLOW)) | (value & (FLAG_SIGN | FLAG_OVERFLOW));
@@ -520,7 +521,7 @@ INLINEOP void op_bitZP() {
     }
 }
 
-INLINEOP void bmi() {
+static inline __attribute__((always_inline, flatten)) void bmi() {
     if((cpu.cpustatus & FLAG_SIGN) == FLAG_SIGN) {
         uint32_t oldpc = cpu.pc;
 
@@ -534,7 +535,7 @@ INLINEOP void bmi() {
     }
 }
 
-INLINEOP void bne() {
+static inline __attribute__((always_inline, flatten)) void bne() {
     if((cpu.cpustatus & FLAG_ZERO) == 0) {
         uint32_t oldpc = cpu.pc;
 
@@ -548,7 +549,7 @@ INLINEOP void bne() {
     }
 }
 
-INLINEOP void bpl() {
+static inline __attribute__((always_inline, flatten)) void bpl() {
     if((cpu.cpustatus & FLAG_SIGN) == 0) {
         uint32_t oldpc = cpu.pc;
 
@@ -562,7 +563,7 @@ INLINEOP void bpl() {
     }
 }
 
-INLINEOP void brk() {
+static inline __attribute__((always_inline, flatten)) void brk() {
     cpu.pc++;
 
     push16(cpu.pc); //push next instruction address onto stack
@@ -573,7 +574,7 @@ INLINEOP void brk() {
     cpu.pc = read6502(0xFFFE) | (read6502(0xFFFF) << 8);
 }
 
-INLINEOP void bvc() {
+static inline __attribute__((always_inline, flatten)) void bvc() {
     if((cpu.cpustatus & FLAG_OVERFLOW) == 0) {
         uint32_t oldpc = cpu.pc;
 
@@ -587,7 +588,7 @@ INLINEOP void bvc() {
     }
 }
 
-INLINEOP void bvs() {
+static inline __attribute__((always_inline, flatten)) void bvs() {
     if((cpu.cpustatus & FLAG_OVERFLOW) == FLAG_OVERFLOW) {
         uint32_t oldpc = cpu.pc;
 
@@ -601,23 +602,23 @@ INLINEOP void bvs() {
     }
 }
 
-INLINEOP void clc() {
+static inline __attribute__((always_inline, flatten)) void clc() {
     clearcarry();
 }
 
-INLINEOP void cld() {
+static inline __attribute__((always_inline, flatten)) void cld() {
     cleardecimal();
 }
 
-INLINEOP void cli_() {
+static inline __attribute__((always_inline, flatten)) void cli_() {
     clearinterrupt();
 }
 
-INLINEOP void clv() {
+static inline __attribute__((always_inline, flatten)) void clv() {
     clearoverflow();
 }
 
-INLINEOP void cmp() {
+static inline __attribute__((always_inline, flatten)) void cmp() {
     uint16_t value = getvalue();
     uint32_t result = (uint16_t) cpu.a - value;
 
@@ -635,7 +636,7 @@ INLINEOP void cmp() {
     signcalc(result);
 }
 
-INLINEOP void cmpZP() {
+static inline __attribute__((always_inline, flatten)) void cmpZP() {
     uint16_t value = getvalueZP();
     uint32_t result = (uint16_t) cpu.a - value;
 
@@ -652,7 +653,7 @@ INLINEOP void cmpZP() {
     signcalc(result);
 }
 
-INLINEOP void cpx() {
+static inline __attribute__((always_inline, flatten)) void cpx() {
     uint16_t value = getvalue();
     uint16_t result = (uint16_t) cpu.x - value;
 
@@ -670,7 +671,7 @@ INLINEOP void cpx() {
     signcalc(result);
 }
 
-INLINEOP void cpxZP() {
+static inline __attribute__((always_inline, flatten)) void cpxZP() {
     uint16_t value = getvalueZP();
     uint16_t result = (uint16_t) cpu.x - value;
 
@@ -688,7 +689,7 @@ INLINEOP void cpxZP() {
     signcalc(result);
 }
 
-INLINEOP void cpy() {
+static inline __attribute__((always_inline, flatten)) void cpy() {
     uint16_t value = getvalue();
     uint16_t result = (uint16_t) cpu.y - value;
 
@@ -706,7 +707,7 @@ INLINEOP void cpy() {
     signcalc(result);
 }
 
-INLINEOP void cpyZP() {
+static inline __attribute__((always_inline, flatten)) void cpyZP() {
     uint16_t value = getvalueZP();
     uint16_t result = (uint16_t) cpu.y - value;
 
@@ -724,7 +725,7 @@ INLINEOP void cpyZP() {
     signcalc(result);
 }
 
-INLINEOP void dec() {
+static inline __attribute__((always_inline, flatten)) void dec() {
     uint32_t result = getvalue() - 1;
 
     zerocalc(result);
@@ -733,7 +734,7 @@ INLINEOP void dec() {
     putvalue(result);
 }
 
-INLINEOP void decZP() {
+static inline __attribute__((always_inline, flatten)) void decZP() {
     uint32_t result = getvalueZP() - 1;
 
     zerocalc(result);
@@ -742,21 +743,21 @@ INLINEOP void decZP() {
     putvalue(result);
 }
 
-INLINEOP void dex() {
+static inline __attribute__((always_inline, flatten)) void dex() {
     cpu.x--;
 
     zerocalc(cpu.x);
     signcalc(cpu.x);
 }
 
-INLINEOP void dey() {
+static inline __attribute__((always_inline, flatten)) void dey() {
     cpu.y--;
 
     zerocalc(cpu.y);
     signcalc(cpu.y);
 }
 
-INLINEOP void eor() {
+static inline __attribute__((always_inline, flatten)) void eor() {
     uint32_t result = cpu.a ^ getvalue();
 
     zerocalc(result);
@@ -765,7 +766,7 @@ INLINEOP void eor() {
     saveaccum(result);
 }
 
-INLINEOP void eorZP() {
+static inline __attribute__((always_inline, flatten)) void eorZP() {
     uint32_t result = cpu.a ^ getvalueZP();
 
     zerocalc(result);
@@ -774,7 +775,7 @@ INLINEOP void eorZP() {
     saveaccum(result);
 }
 
-INLINEOP void inc() {
+static inline __attribute__((always_inline, flatten)) void inc() {
     uint32_t result = getvalue() + 1;
 
     zerocalc(result);
@@ -783,7 +784,7 @@ INLINEOP void inc() {
     putvalue(result);
 }
 
-INLINEOP void incZP() {
+static inline __attribute__((always_inline, flatten)) void incZP() {
     uint32_t result = getvalueZP() + 1;
 
     zerocalc(result);
@@ -792,73 +793,73 @@ INLINEOP void incZP() {
     putvalue(result);
 }
 
-INLINEOP void inx() {
+static inline __attribute__((always_inline, flatten)) void inx() {
     cpu.x++;
 
     zerocalc(cpu.x);
     signcalc(cpu.x);
 }
 
-INLINEOP void iny() {
+static inline __attribute__((always_inline, flatten)) void iny() {
     cpu.y++;
 
     zerocalc(cpu.y);
     signcalc(cpu.y);
 }
 
-INLINEOP void jmp() {
+static inline __attribute__((always_inline, flatten)) void jmp() {
     cpu.pc = cpu.ea;
 }
 
-INLINEOP void jsr() {
+static inline __attribute__((always_inline, flatten)) void jsr() {
     push16(cpu.pc - 1);
 
     cpu.pc = cpu.ea;
 }
 
-INLINEOP void lda() {
+static inline __attribute__((always_inline, flatten)) void lda() {
     cpu.a = getvalue();
 
     zerocalc(cpu.a);
     signcalc(cpu.a);
 }
 
-INLINEOP void ldaZP() {
+static inline __attribute__((always_inline, flatten)) void ldaZP() {
     cpu.a = getvalueZP();
 
     zerocalc(cpu.a);
     signcalc(cpu.a);
 }
 
-INLINEOP void ldx() {
+static inline __attribute__((always_inline, flatten)) void ldx() {
     cpu.x = getvalue();
 
     zerocalc(cpu.x);
     signcalc(cpu.x);
 }
 
-INLINEOP void ldxZP() {
+static inline __attribute__((always_inline, flatten)) void ldxZP() {
     cpu.x = getvalue();
 
     zerocalc(cpu.x);
     signcalc(cpu.x);
 }
 
-INLINEOP void ldy() {
+static inline __attribute__((always_inline, flatten)) void ldy() {
     cpu.y = getvalue();
 
     zerocalc(cpu.y);
     signcalc(cpu.y);
 }
 
-INLINEOP void ldyZP() {
+static inline __attribute__((always_inline, flatten)) void ldyZP() {
     cpu.y = getvalueZP();
 
     zerocalc(cpu.y);
     signcalc(cpu.y);
 }
 
-INLINEOP void lsr() {
+static inline __attribute__((always_inline, flatten)) void lsr() {
     uint32_t value = getvalue();
     uint32_t result = value >> 1;
 
@@ -873,7 +874,7 @@ INLINEOP void lsr() {
     putvalue(result);
 }
 
-INLINEOP void lsrZP() {
+static inline __attribute__((always_inline, flatten)) void lsrZP() {
     uint32_t value = getvalue();
     uint32_t result = value >> 1;
 
@@ -889,7 +890,7 @@ INLINEOP void lsrZP() {
     putvalue(result);
 }
 
-INLINEOP void lsra() {
+static inline __attribute__((always_inline, flatten)) void lsra() {
     uint8_t value = cpu.a;
     uint8_t result = value >> 1;
 
@@ -905,7 +906,7 @@ INLINEOP void lsra() {
     saveaccum(result);
 }
 
-INLINEOP void ora() {
+static inline __attribute__((always_inline, flatten)) void ora() {
     uint32_t result = cpu.a | getvalue();
 
     zerocalc(result);
@@ -913,7 +914,7 @@ INLINEOP void ora() {
     saveaccum(result);
 }
 
-INLINEOP void oraZP() {
+static inline __attribute__((always_inline, flatten)) void oraZP() {
     uint32_t result = cpu.a | getvalueZP();
 
     zerocalc(result);
@@ -921,26 +922,26 @@ INLINEOP void oraZP() {
     saveaccum(result);
 }
 
-INLINEOP void pha() {
+static inline __attribute__((always_inline, flatten)) void pha() {
     push8(cpu.a);
 }
 
-INLINEOP void php() {
+static inline __attribute__((always_inline, flatten)) void php() {
     push8(cpu.cpustatus | FLAG_BREAK);
 }
 
-INLINEOP void pla() {
+static inline __attribute__((always_inline, flatten)) void pla() {
     cpu.a = pull8();
 
     zerocalc(cpu.a);
     signcalc(cpu.a);
 }
 
-INLINEOP void plp() {
+static inline __attribute__((always_inline, flatten)) void plp() {
     cpu.cpustatus = (pull8() & 0xef) | FLAG_CONSTANT;
 }
 
-INLINEOP void rol() {
+static inline __attribute__((always_inline, flatten)) void rol() {
     uint16_t value = getvalue();
     uint16_t result = (value << 1) | (cpu.cpustatus & FLAG_CARRY);
 
@@ -950,7 +951,7 @@ INLINEOP void rol() {
     putvalue(result);
 }
 
-INLINEOP void rolZP() {
+static inline __attribute__((always_inline, flatten)) void rolZP() {
     uint16_t value = getvalueZP();
     uint16_t result = (value << 1) | (cpu.cpustatus & FLAG_CARRY);
 
@@ -960,7 +961,7 @@ INLINEOP void rolZP() {
     putvalue(result);
 }
 
-INLINEOP void rola() {
+static inline __attribute__((always_inline, flatten)) void rola() {
     uint16_t value = cpu.a;
     uint16_t result = (value << 1) | (cpu.cpustatus & FLAG_CARRY);
 
@@ -970,7 +971,7 @@ INLINEOP void rola() {
     saveaccum(result);
 }
 
-INLINEOP void ror() {
+static inline __attribute__((always_inline, flatten)) void ror() {
     uint32_t value = getvalue();
     uint16_t result = (value >> 1) | ((cpu.cpustatus & FLAG_CARRY) << 7);
 
@@ -985,7 +986,7 @@ INLINEOP void ror() {
     putvalue(result);
 }
 
-INLINEOP void rorZP() {
+static inline __attribute__((always_inline, flatten)) void rorZP() {
     uint32_t value = getvalueZP();
     uint16_t result = (value >> 1) | ((cpu.cpustatus & FLAG_CARRY) << 7);
 
@@ -1000,7 +1001,7 @@ INLINEOP void rorZP() {
     putvalue(result);
 }
 
-INLINEOP void rora() {
+static inline __attribute__((always_inline, flatten)) void rora() {
     uint32_t value = cpu.a;
     uint16_t result = (value >> 1) | ((cpu.cpustatus & FLAG_CARRY) << 7);
 
@@ -1016,83 +1017,83 @@ INLINEOP void rora() {
 }
 
 
-INLINEOP void rti() {
+static inline __attribute__((always_inline, flatten)) void rti() {
     cpu.cpustatus = pull8();
     cpu.pc = pull16();
 }
 
-INLINEOP void rts() {
+static inline __attribute__((always_inline, flatten)) void rts() {
     cpu.pc = pull16() + 1;
 }
 
-INLINEOP void sbc() {
+static inline __attribute__((always_inline, flatten)) void sbc() {
     unsigned data = getvalue();
     _sbc(data);
 }
 
-INLINEOP void sbcZP() {
+static inline __attribute__((always_inline, flatten)) void sbcZP() {
     unsigned data = getvalueZP();
     _sbc(data);
 }
 
 
-INLINEOP void sec() {
+static inline __attribute__((always_inline, flatten)) void sec() {
     setcarry();
 }
 
-INLINEOP void sed() {
+static inline __attribute__((always_inline, flatten)) void sed() {
     setdecimal();
 }
 
-INLINEOP void sei_() {
+static inline __attribute__((always_inline, flatten)) void sei_() {
     setinterrupt();
 }
 
-INLINEOP void sta() {
+static inline __attribute__((always_inline, flatten)) void sta() {
     putvalue(cpu.a);
 }
 
-INLINEOP void stx() {
+static inline __attribute__((always_inline, flatten)) void stx() {
     putvalue(cpu.x);
 }
 
-INLINEOP void sty() {
+static inline __attribute__((always_inline, flatten)) void sty() {
     putvalue(cpu.y);
 }
 
-INLINEOP void tax() {
+static inline __attribute__((always_inline, flatten)) void tax() {
     cpu.x = cpu.a;
 
     zerocalc(cpu.x);
     signcalc(cpu.x);
 }
 
-INLINEOP void tay() {
+static inline __attribute__((always_inline, flatten)) void tay() {
     cpu.y = cpu.a;
 
     zerocalc(cpu.y);
     signcalc(cpu.y);
 }
 
-INLINEOP void tsx() {
+static inline __attribute__((always_inline, flatten)) void tsx() {
     cpu.x = cpu.sp;
 
     zerocalc(cpu.x);
     signcalc(cpu.x);
 }
 
-INLINEOP void txa() {
+static inline __attribute__((always_inline, flatten)) void txa() {
     cpu.a = cpu.x;
 
     zerocalc(cpu.a);
     signcalc(cpu.a);
 }
 
-INLINEOP void txs() {
+static inline __attribute__((always_inline, flatten)) void txs() {
     cpu.sp = cpu.x;
 }
 
-INLINEOP void tya() {
+static inline __attribute__((always_inline, flatten)) void tya() {
     cpu.a = cpu.y;
 
     zerocalc(cpu.a);
@@ -1101,48 +1102,48 @@ INLINEOP void tya() {
 
 
 //undocumented instructions
-INLINEOP void lax() {
+static inline __attribute__((always_inline, flatten)) void lax() {
     lda();
     ldx();
 }
 
-INLINEOP void sax() {
+static inline __attribute__((always_inline, flatten)) void sax() {
     sta();
     stx();
     putvalue(cpu.a & cpu.x);
 }
 
-INLINEOP void dcp() {
+static inline __attribute__((always_inline, flatten)) void dcp() {
     dec();
     cmp();
 }
 
-INLINEOP void isb() {
+static inline __attribute__((always_inline, flatten)) void isb() {
     inc();
     sbc();
 }
 
-INLINEOP void slo() {
+static inline __attribute__((always_inline, flatten)) void slo() {
     asl();
     ora();
 }
 
-INLINEOP void rla() {
+static inline __attribute__((always_inline, flatten)) void rla() {
     rol();
     op_and();
 }
 
-INLINEOP void sre() {
+static inline __attribute__((always_inline, flatten)) void sre() {
     lsr();
     eor();
 }
 
-INLINEOP void rra() {
+static inline __attribute__((always_inline, flatten)) void rra() {
     ror();
     adc();
 }
 
-INLINEOP void alr() { // (FB)
+static inline __attribute__((always_inline, flatten)) void alr() { // (FB)
     uint32_t result = cpu.a & getvalue();
 
     if(result & 1) {
@@ -1158,7 +1159,7 @@ INLINEOP void alr() { // (FB)
     saveaccum(result);
 }
 
-INLINEOP void arr() { //This one took me hours.. finally taken from VICE (FB)
+static inline __attribute__((always_inline, flatten)) void arr() { //This one took me hours.. finally taken from VICE (FB)
     uint32_t result;
 
     result = cpu.a & getvalue();
@@ -1215,7 +1216,7 @@ INLINEOP void arr() { //This one took me hours.. finally taken from VICE (FB)
     }
 }
 
-INLINEOP void xaa() { // AKA ANE
+static inline __attribute__((always_inline, flatten)) void xaa() { // AKA ANE
     const uint32_t val = 0xee; // VICE uses 0xff - but this results in an error in the testsuite (FB)
 
     uint32_t result = (cpu.a | val) & cpu.x & getvalue();
@@ -1225,7 +1226,7 @@ INLINEOP void xaa() { // AKA ANE
     saveaccum(result);
 }
 
-INLINEOP void lxa() {
+static inline __attribute__((always_inline, flatten)) void lxa() {
     const uint32_t val = 0xee;
 
     uint32_t result = (cpu.a | val) & getvalue();
@@ -1238,7 +1239,7 @@ INLINEOP void lxa() {
     saveaccum(result);
 }
 
-INLINEOP void axs() { //aka SBX
+static inline __attribute__((always_inline, flatten)) void axs() { //aka SBX
     uint32_t result = getvalue();
 
     result = (cpu.a & cpu.x) - result;
@@ -1254,11 +1255,11 @@ INLINEOP void axs() { //aka SBX
     signcalc(cpu.x);
 }
 
-INLINEOP void ahx() { //todo (is unstable)
+static inline __attribute__((always_inline, flatten)) void ahx() { //todo (is unstable)
     UNSUPPORTED
 }
 
-INLINEOP void anc() {
+static inline __attribute__((always_inline, flatten)) void anc() {
     uint32_t result = cpu.a & getvalue();
 
     signcalc(result)
@@ -1273,7 +1274,7 @@ INLINEOP void anc() {
     saveaccum(result);
 }
 
-INLINEOP void las() {
+static inline __attribute__((always_inline, flatten)) void las() {
     uint32_t result = cpu.sp & getvalue();
 
     signcalc(result);
@@ -1286,161 +1287,161 @@ INLINEOP void las() {
 }
 
 /********************************************************************************************************************/
-/* OPCODES																																																					*/
+/* staticS																																																					*/
 /********************************************************************************************************************/
 
-OPCODE void opKIL(void) {
+static void opKIL(void) {
     Serial.print("CPU JAM @ $");
     Serial.println(cpu.pc);
 
     cpu_reset();
 }
 
-OPCODE void op0x0(void) {
+static void op0x0(void) {
     cpu.ticks = 7;
 
     imp();
     brk();
 }
 
-OPCODE void op0x1(void) {
+static void op0x1(void) {
     cpu.ticks = 6;
 
     indx();
     ora();
 }
 
-OPCODE void op0x3(void) { //undocumented
+static void op0x3(void) { //undocumented
     cpu.ticks = 8;
 
     indx();
     slo();
 }
 
-OPCODE void op0x4(void) { //nop read zeropage
+static void op0x4(void) { //nop read zeropage
     cpu.ticks = 3;
 
     zp();
 }
 
-OPCODE void op0x5(void) {
+static void op0x5(void) {
     cpu.ticks = 3;
 
     zp();
     oraZP();
 }
 
-OPCODE void op0x6(void) {
+static void op0x6(void) {
     cpu.ticks = 5;
 
     zp();
     aslZP();
 }
 
-OPCODE void op0x7(void) { //undocumented SLO
+static void op0x7(void) { //undocumented SLO
     cpu.ticks = 5;
 
     zp();
     slo();
 }
 
-OPCODE void op0x8(void) {
+static void op0x8(void) {
     cpu.ticks = 3;
 
     imp();
     php();
 }
 
-OPCODE void op0x9(void) {
+static void op0x9(void) {
     cpu.ticks = 2;
 
     imm();
     ora();
 }
 
-OPCODE void op0xA(void) {
+static void op0xA(void) {
     cpu.ticks = 2;
 
     //acc();
     asla();
 }
 
-OPCODE void op0xB(void) { //undocumented
+static void op0xB(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     anc();
 }
 
-OPCODE void op0xC(void) { //nop
+static void op0xC(void) { //nop
     cpu.ticks = 4;
 
     abso();
 }
 
-OPCODE void op0xD(void) {
+static void op0xD(void) {
     cpu.ticks = 4;
 
     abso();
     ora();
 }
 
-OPCODE void op0xE(void) {
+static void op0xE(void) {
     cpu.ticks = 6;
 
     abso();
     asl();
 }
 
-OPCODE void op0xF(void) { //undocumented
+static void op0xF(void) { //undocumented
     cpu.ticks = 6;
 
     abso();
     slo();
 }
 
-OPCODE void op0x10(void) {
+static void op0x10(void) {
     cpu.ticks = 2;
 
     rel();
     bpl();
 }
 
-OPCODE void op0x11(void) {
+static void op0x11(void) {
     cpu.ticks = 5;
 
     indy_t();
     ora();
 }
 
-OPCODE void op0x13(void) { //undocumented
+static void op0x13(void) { //undocumented
     cpu.ticks = 8;
 
     indy();
     slo();
 }
 
-OPCODE void op0x14(void) { //nop
+static void op0x14(void) { //nop
     cpu.ticks = 4;
 
     zpx();
 }
 
-OPCODE void op0x15(void) {
+static void op0x15(void) {
     cpu.ticks = 4;
 
     zpx();
     ora();
 }
 
-OPCODE void op0x16(void) {
+static void op0x16(void) {
     cpu.ticks = 6;
 
     zpx();
     asl();
 }
 
-OPCODE void op0x17(void) { //undocumented
+static void op0x17(void) { //undocumented
     cpu.ticks = 6;
 
     //zpy(); bug
@@ -1448,44 +1449,44 @@ OPCODE void op0x17(void) { //undocumented
     slo();
 }
 
-OPCODE void op0x18(void) {
+static void op0x18(void) {
     cpu.ticks = 2;
 
     imp();
     clc();
 }
 
-OPCODE void op0x19(void) {
+static void op0x19(void) {
     cpu.ticks = 4;
 
     absy_t();
     ora();
 }
 
-OPCODE void op0x1A(void) { //nop
+static void op0x1A(void) { //nop
     cpu.ticks = 2;
 }
 
-OPCODE void op0x1B(void) { //undocumented
+static void op0x1B(void) { //undocumented
     cpu.ticks = 7;
 
     absy();
     slo();
 }
 
-OPCODE void op0x1C(void) { //nop
+static void op0x1C(void) { //nop
     cpu.ticks = 4;
     //();
 }
 
-OPCODE void op0x1D(void) {
+static void op0x1D(void) {
     cpu.ticks = 4;
 
     absx_t();
     ora();
 }
 
-OPCODE void op0x1E(void) {
+static void op0x1E(void) {
     cpu.ticks = 7;
 
     absx();
@@ -1493,337 +1494,337 @@ OPCODE void op0x1E(void) {
 }
 
 
-OPCODE void op0x1F(void) { //undocumented
+static void op0x1F(void) { //undocumented
     cpu.ticks = 7;
 
     absx();
     slo();
 }
 
-OPCODE void op0x20(void) {
+static void op0x20(void) {
     cpu.ticks = 6;
 
     abso();
     jsr();
 }
 
-OPCODE void op0x21(void) {
+static void op0x21(void) {
     cpu.ticks = 6;
 
     indx();
     op_and();
 }
 
-OPCODE void op0x23(void) { //undocumented
+static void op0x23(void) { //undocumented
     cpu.ticks = 8;
 
     indx();
     rla();
 }
 
-OPCODE void op0x24(void) {
+static void op0x24(void) {
     cpu.ticks = 3;
 
     zp();
     op_bitZP();
 }
 
-OPCODE void op0x25(void) {
+static void op0x25(void) {
     cpu.ticks = 3;
 
     zp();
     op_and();
 }
 
-OPCODE void op0x26(void) {
+static void op0x26(void) {
     cpu.ticks = 5;
 
     zp();
     rolZP();
 }
 
-OPCODE void op0x27(void) { //undocumented
+static void op0x27(void) { //undocumented
     cpu.ticks = 5;
 
     zp();
     rla();
 }
 
-OPCODE void op0x28(void) {
+static void op0x28(void) {
     cpu.ticks = 4;
 
     imp();
     plp();
 }
 
-OPCODE void op0x29(void) {
+static void op0x29(void) {
     cpu.ticks = 2;
 
     imm();
     op_and();
 }
 
-OPCODE void op0x2A(void) {
+static void op0x2A(void) {
     cpu.ticks = 2;
 
     //acc();
     rola();
 }
 
-OPCODE void op0x2B(void) { //undocumented
+static void op0x2B(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     anc();
 }
 
-OPCODE void op0x2C(void) {
+static void op0x2C(void) {
     cpu.ticks = 4;
 
     abso();
     op_bit();
 }
 
-OPCODE void op0x2D(void) {
+static void op0x2D(void) {
     cpu.ticks = 4;
 
     abso();
     op_and();
 }
 
-OPCODE void op0x2E(void) {
+static void op0x2E(void) {
     cpu.ticks = 6;
 
     abso();
     rol();
 }
 
-OPCODE void op0x2F(void) { //undocumented
+static void op0x2F(void) { //undocumented
     cpu.ticks = 6;
 
     abso();
     rla();
 }
 
-OPCODE void op0x30(void) {
+static void op0x30(void) {
     cpu.ticks = 2;
 
     rel();
     bmi();
 }
 
-OPCODE void op0x31(void) {
+static void op0x31(void) {
     cpu.ticks = 5;
 
     indy_t();
     op_and();
 }
 
-OPCODE void op0x33(void) { //undocumented
+static void op0x33(void) { //undocumented
     cpu.ticks = 8;
 
     indy();
     rla();
 }
 
-OPCODE void op0x34(void) { //nop
+static void op0x34(void) { //nop
     cpu.ticks = 4;
 
     zpx();
 }
 
-OPCODE void op0x35(void) {
+static void op0x35(void) {
     cpu.ticks = 4;
 
     zpx();
     op_and();
 }
 
-OPCODE void op0x36(void) {
+static void op0x36(void) {
     cpu.ticks = 6;
 
     zpx();
     rol();
 }
 
-OPCODE void op0x37(void) { //undocumented
+static void op0x37(void) { //undocumented
     cpu.ticks = 6;
 
     zpx();
     rla();
 }
 
-OPCODE void op0x38(void) {
+static void op0x38(void) {
     cpu.ticks = 2;
 
     imp();
     sec();
 }
 
-OPCODE void op0x39(void) {
+static void op0x39(void) {
     cpu.ticks = 4;
 
     absy_t();
     op_and();
 }
 
-OPCODE void op0x3A(void) { //nop
+static void op0x3A(void) { //nop
     cpu.ticks = 2;
 }
 
-OPCODE void op0x3B(void) { //undocumented
+static void op0x3B(void) { //undocumented
     cpu.ticks = 7;
 
     absy();
     rla();
 }
 
-OPCODE void op0x3C(void) { //nop
+static void op0x3C(void) { //nop
     cpu.ticks = 4;
 
     absx_t();
 }
 
-OPCODE void op0x3D(void) {
+static void op0x3D(void) {
     cpu.ticks = 4;
 
     absx_t();
     op_and();
 }
 
-OPCODE void op0x3E(void) {
+static void op0x3E(void) {
     cpu.ticks = 7;
 
     absx();
     rol();
 }
 
-OPCODE void op0x3F(void) { //undocumented
+static void op0x3F(void) { //undocumented
     cpu.ticks = 7;
 
     absx();
     rla();
 }
 
-OPCODE void op0x40(void) {
+static void op0x40(void) {
     cpu.ticks = 6;
 
     imp();
     rti();
 }
 
-OPCODE void op0x41(void) {
+static void op0x41(void) {
     cpu.ticks = 6;
 
     indx();
     eor();
 }
 
-OPCODE void op0x43(void) { //undocumented
+static void op0x43(void) { //undocumented
     cpu.ticks = 8;
 
     indx();
     sre();
 }
 
-OPCODE void op0x44(void) { //nop
+static void op0x44(void) { //nop
     cpu.ticks = 3;
 
     zp();
 }
 
-OPCODE void op0x45(void) {
+static void op0x45(void) {
     cpu.ticks = 3;
 
     zp();
     eorZP();
 }
 
-OPCODE void op0x46(void) {
+static void op0x46(void) {
     cpu.ticks = 5;
 
     zp();
     lsrZP();
 }
 
-OPCODE void op0x47(void) { //undocumented
+static void op0x47(void) { //undocumented
     cpu.ticks = 5;
 
     zp();
     sre();
 }
 
-OPCODE void op0x48(void) {
+static void op0x48(void) {
     cpu.ticks = 3;
 
     imp();
     pha();
 }
 
-OPCODE void op0x49(void) {
+static void op0x49(void) {
     cpu.ticks = 2;
 
     imm();
     eor();
 }
 
-OPCODE void op0x4A(void) {
+static void op0x4A(void) {
     cpu.ticks = 2;
 
 //	acc();
     lsra();
 }
 
-OPCODE void op0x4B(void) { //undocumented
+static void op0x4B(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     alr();
 }
 
-OPCODE void op0x4C(void) {
+static void op0x4C(void) {
     cpu.ticks = 3;
 
     abso();
     jmp();
 }
 
-OPCODE void op0x4D(void) {
+static void op0x4D(void) {
     cpu.ticks = 4;
 
     abso();
     eor();
 }
 
-OPCODE void op0x4E(void) {
+static void op0x4E(void) {
     cpu.ticks = 6;
 
     abso();
     lsr();
 }
 
-OPCODE void op0x4F(void) { //undocumented
+static void op0x4F(void) { //undocumented
     cpu.ticks = 6;
 
     abso();
     sre();
 }
 
-OPCODE void op0x50(void) {
+static void op0x50(void) {
     cpu.ticks = 2;
 
     rel();
     bvc();
 }
 
-OPCODE void op0x51(void) {
+static void op0x51(void) {
     cpu.ticks = 5;
 
     indy_t();
     eor();
 }
 
-OPCODE void op0x53(void) { //undocumented
+static void op0x53(void) { //undocumented
     cpu.ticks = 8;
 
     //zp(); BUG
@@ -1831,469 +1832,469 @@ OPCODE void op0x53(void) { //undocumented
     sre();
 }
 
-OPCODE void op0x54(void) { //nop
+static void op0x54(void) { //nop
     cpu.ticks = 4;
 
     zpx();
 }
 
-OPCODE void op0x55(void) {
+static void op0x55(void) {
     cpu.ticks = 4;
 
     zpx();
     eor();
 }
 
-OPCODE void op0x56(void) {
+static void op0x56(void) {
     cpu.ticks = 6;
 
     zpx();
     lsr();
 }
 
-OPCODE void op0x57(void) { //undocumented
+static void op0x57(void) { //undocumented
     cpu.ticks = 6;
 
     zpx();
     sre();
 }
 
-OPCODE void op0x58(void) {
+static void op0x58(void) {
     cpu.ticks = 2;
 
     imp();
     cli_();
 }
 
-OPCODE void op0x59(void) {
+static void op0x59(void) {
     cpu.ticks = 4;
 
     absy_t();
     eor();
 }
 
-OPCODE void op0x5A(void) { //nop
+static void op0x5A(void) { //nop
     cpu.ticks = 2;
 }
 
-OPCODE void op0x5B(void) { //undocumented
+static void op0x5B(void) { //undocumented
     cpu.ticks = 7;
 
     absy();
     sre();
 }
 
-OPCODE void op0x5C(void) { //nop
+static void op0x5C(void) { //nop
     cpu.ticks = 4;
 
     absx_t();
 }
 
-OPCODE void op0x5D(void) {
+static void op0x5D(void) {
     cpu.ticks = 4;
 
     absx_t();
     eor();
 }
 
-OPCODE void op0x5E(void) {
+static void op0x5E(void) {
     cpu.ticks = 7;
 
     absx();
     lsr();
 }
 
-OPCODE void op0x5F(void) { //undocumented
+static void op0x5F(void) { //undocumented
     cpu.ticks = 7;
 
     absx();
     sre();
 }
 
-OPCODE void op0x60(void) {
+static void op0x60(void) {
     cpu.ticks = 6;
 
     imp();
     rts();
 }
 
-OPCODE void op0x61(void) {
+static void op0x61(void) {
     cpu.ticks = 6;
 
     indx();
     adc();
 }
 
-OPCODE void op0x63(void) { //undocumented
+static void op0x63(void) { //undocumented
     cpu.ticks = 8;
 
     indx();
     rra();
 }
 
-OPCODE void op0x64(void) {
+static void op0x64(void) {
     cpu.ticks = 3;
 
     zp();
 }
 
-OPCODE void op0x65(void) {
+static void op0x65(void) {
     cpu.ticks = 3;
 
     zp();
     adcZP();
 }
 
-OPCODE void op0x66(void) {
+static void op0x66(void) {
     cpu.ticks = 5;
 
     zp();
     rorZP();
 }
 
-OPCODE void op0x67(void) { //undocumented
+static void op0x67(void) { //undocumented
     cpu.ticks = 5;
 
     zp();
     rra();
 }
 
-OPCODE void op0x68(void) {
+static void op0x68(void) {
     cpu.ticks = 4;
 
     imp();
     pla();
 }
 
-OPCODE void op0x69(void) {
+static void op0x69(void) {
     cpu.ticks = 2;
     
     imm();
     adc();
 }
 
-OPCODE void op0x6A(void) {
+static void op0x6A(void) {
     cpu.ticks = 2;
 
 //	acc();
     rora();
 }
 
-OPCODE void op0x6B(void) { //undocumented
+static void op0x6B(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     arr();
 }
 
-OPCODE void op0x6C(void) {
+static void op0x6C(void) {
     cpu.ticks = 5;
 
     ind();
     jmp();
 }
 
-OPCODE void op0x6D(void) {
+static void op0x6D(void) {
     cpu.ticks = 4;
 
     abso();
     adc();
 }
 
-OPCODE void op0x6E(void) {
+static void op0x6E(void) {
     cpu.ticks = 6;
 
     abso();
     ror();
 }
 
-OPCODE void op0x6F(void) { //undocumented
+static void op0x6F(void) { //undocumented
     cpu.ticks = 6;
 
     abso();
     rra();
 }
 
-OPCODE void op0x70(void) {
+static void op0x70(void) {
     cpu.ticks = 2;
 
     rel();
     bvs();
 }
 
-OPCODE void op0x71(void) {
+static void op0x71(void) {
     cpu.ticks = 5;
 
     indy_t();
     adc();
 }
 
-OPCODE void op0x73(void) { //undocumented
+static void op0x73(void) { //undocumented
     cpu.ticks = 8;
 
     indy();
     rra();
 }
 
-OPCODE void op0x74(void) { //nop
+static void op0x74(void) { //nop
     cpu.ticks = 4;
 
     zpx();
 }
 
-OPCODE void op0x75(void) {
+static void op0x75(void) {
     cpu.ticks = 4;
 
     zpx();
     adc();
 }
 
-OPCODE void op0x76(void) {
+static void op0x76(void) {
     cpu.ticks = 6;
 
     zpx();
     ror();
 }
 
-OPCODE void op0x77(void) { //undocumented
+static void op0x77(void) { //undocumented
     cpu.ticks = 6;
 
     zpx();
     rra();
 }
 
-OPCODE void op0x78(void) {
+static void op0x78(void) {
     cpu.ticks = 2;
 
     imp();
     sei_();
 }
 
-OPCODE void op0x79(void) {
+static void op0x79(void) {
     cpu.ticks = 4;
 
     absy_t();
     adc();
 }
 
-OPCODE void op0x7A(void) { //nop
+static void op0x7A(void) { //nop
     cpu.ticks = 2;
 }
 
-OPCODE void op0x7B(void) { //undocumented
+static void op0x7B(void) { //undocumented
     cpu.ticks = 7;
 
     absy();
     rra();
 }
 
-OPCODE void op0x7C(void) { //nop
+static void op0x7C(void) { //nop
     cpu.ticks = 4;
 
     absx_t();
 }
 
-OPCODE void op0x7D(void) {
+static void op0x7D(void) {
     cpu.ticks = 4;
 
     absx_t();
     adc();
 }
 
-OPCODE void op0x7E(void) {
+static void op0x7E(void) {
     cpu.ticks = 7;
 
     absx();
     ror();
 }
 
-OPCODE void op0x7F(void) { //undocumented
+static void op0x7F(void) { //undocumented
     cpu.ticks = 7;
 
     absx();
     rra();
 }
 
-OPCODE void op0x80(void) { //nop
+static void op0x80(void) { //nop
     cpu.ticks = 2;
 
     imm();
 }
 
-OPCODE void op0x81(void) {
+static void op0x81(void) {
     cpu.ticks = 6;
 
     indx();
     sta();
 }
 
-OPCODE void op0x82(void) { //nop
+static void op0x82(void) { //nop
     cpu.ticks = 2;
 
     imm();
 }
 
-OPCODE void op0x83(void) { //undocumented
+static void op0x83(void) { //undocumented
     cpu.ticks = 6;
 
     indx();
     sax();
 }
 
-OPCODE void op0x84(void) {
+static void op0x84(void) {
     cpu.ticks = 3;
 
     zp();
     sty();
 }
 
-OPCODE void op0x85(void) {
+static void op0x85(void) {
     cpu.ticks = 3;
 
     zp();
     sta();
 }
 
-OPCODE void op0x86(void) {
+static void op0x86(void) {
     cpu.ticks = 3;
 
     zp();
     stx();
 }
 
-OPCODE void op0x87(void) { //undocumented
+static void op0x87(void) { //undocumented
     cpu.ticks = 3;
 
     zp();
     sax();
 }
 
-OPCODE void op0x88(void) {
+static void op0x88(void) {
     cpu.ticks = 2;
 
     imp();
     dey();
 }
 
-OPCODE void op0x89(void) { //nop
+static void op0x89(void) { //nop
     cpu.ticks = 2;
 
     imm();
 }
 
-OPCODE void op0x8A(void) {
+static void op0x8A(void) {
     cpu.ticks = 2;
 
     imp();
     txa();
 }
 
-OPCODE void op0x8B(void) { //undocumented
+static void op0x8B(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     xaa();
 }
 
-OPCODE void op0x8C(void) {
+static void op0x8C(void) {
     cpu.ticks = 4;
 
     abso();
     sty();
 }
 
-OPCODE void op0x8D(void) {
+static void op0x8D(void) {
     cpu.ticks = 4;
 
     abso();
     sta();
 }
 
-OPCODE void op0x8E(void) {
+static void op0x8E(void) {
     cpu.ticks = 4;
 
     abso();
     stx();
 }
 
-OPCODE void op0x8F(void) { //undocumented
+static void op0x8F(void) { //undocumented
     cpu.ticks = 4;
 
     abso();
     sax();
 }
 
-OPCODE void op0x90(void) {
+static void op0x90(void) {
     cpu.ticks = 2;
 
     rel();
     bcc();
 }
 
-OPCODE void op0x91(void) {
+static void op0x91(void) {
     cpu.ticks = 6;
 
     indy();
     sta();
 }
 
-OPCODE void op0x93(void) { //undocumented
+static void op0x93(void) { //undocumented
     cpu.ticks = 6;
 
     indy();
     ahx();
 }
 
-OPCODE void op0x94(void) {
+static void op0x94(void) {
     cpu.ticks = 4;
 
     zpx();
     sty();
 }
 
-OPCODE void op0x95(void) {
+static void op0x95(void) {
     cpu.ticks = 4;
 
     zpx();
     sta();
 }
 
-OPCODE void op0x96(void) {
+static void op0x96(void) {
     cpu.ticks = 4;
 
     zpy();
     stx();
 }
 
-OPCODE void op0x97(void) { //undocumented
+static void op0x97(void) { //undocumented
     cpu.ticks = 4;
 
     zpy();
     sax();
 }
 
-OPCODE void op0x98(void) {
+static void op0x98(void) {
     cpu.ticks = 2;
 
     imp();
     tya();
 }
 
-OPCODE void op0x99(void) {
+static void op0x99(void) {
     cpu.ticks = 5;
 
     absy();
     sta();
 }
 
-OPCODE void op0x9A(void) {
+static void op0x9A(void) {
     cpu.ticks = 2;
 
     imp();
     txs();
 }
 
-OPCODE void op0x9B(void) { //undocumented
+static void op0x9B(void) { //undocumented
     cpu.ticks = 5;
 
     absy();
@@ -2301,7 +2302,7 @@ OPCODE void op0x9B(void) { //undocumented
     UNSUPPORTED;
 }
 
-OPCODE void op0x9C(void) { //undocumented
+static void op0x9C(void) { //undocumented
     cpu.ticks = 5;
 
     absy();
@@ -2309,655 +2310,655 @@ OPCODE void op0x9C(void) { //undocumented
     UNSUPPORTED;
 }
 
-OPCODE void op0x9D(void) {
+static void op0x9D(void) {
     cpu.ticks = 5;
 
     absx();
     sta();
 }
 
-OPCODE void op0x9E(void) { //undocumented
+static void op0x9E(void) { //undocumented
     cpu.ticks = 5;
 
     absx();
     //shx();
 }
 
-OPCODE void op0x9F(void) { //undocumented
+static void op0x9F(void) { //undocumented
     cpu.ticks = 5;
 
     absx();
     ahx();
 }
 
-OPCODE void op0xA0(void) {
+static void op0xA0(void) {
     cpu.ticks = 2;
 
     imm();
     ldy();
 }
 
-OPCODE void op0xA1(void) {
+static void op0xA1(void) {
     cpu.ticks = 6;
 
     indx();
     lda();
 }
 
-OPCODE void op0xA2(void) {
+static void op0xA2(void) {
     cpu.ticks = 2;
 
     imm();
     ldx();
 }
 
-OPCODE void op0xA3(void) { //undocumented
+static void op0xA3(void) { //undocumented
     cpu.ticks = 6;
 
     indx();
     lax();
 }
 
-OPCODE void op0xA4(void) {
+static void op0xA4(void) {
     cpu.ticks = 3;
 
     zp();
     ldyZP();
 }
 
-OPCODE void op0xA5(void) {
+static void op0xA5(void) {
     cpu.ticks = 3;
 
     zp();
     ldaZP();
 }
 
-OPCODE void op0xA6(void) {
+static void op0xA6(void) {
     cpu.ticks = 3;
 
     zp();
     ldxZP();
 }
 
-OPCODE void op0xA7(void) { //undocumented
+static void op0xA7(void) { //undocumented
     cpu.ticks = 3;
 
     zp();
     lax();
 }
 
-OPCODE void op0xA8(void) {
+static void op0xA8(void) {
     cpu.ticks = 2;
 
     imp();
     tay();
 }
 
-OPCODE void op0xA9(void) {
+static void op0xA9(void) {
     cpu.ticks = 2;
 
     imm();
     lda();
 }
 
-OPCODE void op0xAA(void) {
+static void op0xAA(void) {
     cpu.ticks = 2;
 
     imp();
     tax();
 }
 
-OPCODE void op0xAB(void) { //undocumented
+static void op0xAB(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     lxa();
 }
 
-OPCODE void op0xAC(void) {
+static void op0xAC(void) {
     cpu.ticks = 4;
 
     abso();
     ldy();
 }
 
-OPCODE void op0xAD(void) {
+static void op0xAD(void) {
     cpu.ticks = 4;
 
     abso();
     lda();
 }
 
-OPCODE void op0xAE(void) {
+static void op0xAE(void) {
     cpu.ticks = 4;
 
     abso();
     ldx();
 }
 
-OPCODE void op0xAF(void) { //undocumented
+static void op0xAF(void) { //undocumented
     cpu.ticks = 4;
 
     abso();
     lax();
 }
 
-OPCODE void op0xB0(void) {
+static void op0xB0(void) {
     cpu.ticks = 2;
 
     rel();
     bcs();
 }
 
-OPCODE void op0xB1(void) {
+static void op0xB1(void) {
     cpu.ticks = 5;
 
     indy_t();
     lda();
 }
 
-OPCODE void op0xB3(void) { //undocumented
+static void op0xB3(void) { //undocumented
     cpu.ticks = 5;
 
     indy_t();
     lax();
 }
 
-OPCODE void op0xB4(void) {
+static void op0xB4(void) {
     cpu.ticks = 4;
 
     zpx();
     ldy();
 }
 
-OPCODE void op0xB5(void) {
+static void op0xB5(void) {
     cpu.ticks = 4;
 
     zpx();
     lda();
 }
 
-OPCODE void op0xB6(void) {
+static void op0xB6(void) {
     cpu.ticks = 4;
 
     zpy();
     ldx();
 }
 
-OPCODE void op0xB7(void) { //undocumented
+static void op0xB7(void) { //undocumented
     cpu.ticks = 4;
 
     zpy();
     lax();
 }
 
-OPCODE void op0xB8(void) {
+static void op0xB8(void) {
     cpu.ticks = 2;
 
     imp();
     clv();
 }
 
-OPCODE void op0xB9(void) {
+static void op0xB9(void) {
     cpu.ticks = 4;
 
     absy_t();
     lda();
 }
 
-OPCODE void op0xBA(void) {
+static void op0xBA(void) {
     cpu.ticks = 2;
 
     imp();
     tsx();
 }
 
-OPCODE void op0xBB(void) { //undocumented
+static void op0xBB(void) { //undocumented
     cpu.ticks = 4;
 
     absy_t();
     las();
 }
 
-OPCODE void op0xBC(void) {
+static void op0xBC(void) {
     cpu.ticks = 4;
 
     absx_t();
     ldy();
 }
 
-OPCODE void op0xBD(void) {
+static void op0xBD(void) {
     cpu.ticks = 4;
 
     absx_t();
     lda();
 }
 
-OPCODE void op0xBE(void) {
+static void op0xBE(void) {
     cpu.ticks = 4;
 
     absy_t();
     ldx();
 }
 
-OPCODE void op0xBF(void) { //undocumented
+static void op0xBF(void) { //undocumented
     cpu.ticks = 4;
 
     absy_t();
     lax();
 }
 
-OPCODE void op0xC0(void) {
+static void op0xC0(void) {
     cpu.ticks = 2;
 
     imm();
     cpy();
 }
 
-OPCODE void op0xC1(void) {
+static void op0xC1(void) {
     cpu.ticks = 6;
 
     indx();
     cmp();
 }
 
-OPCODE void op0xC2(void) { //nop
+static void op0xC2(void) { //nop
     cpu.ticks = 2;
 
     imm();
 }
 
-OPCODE void op0xC3(void) { //undocumented
+static void op0xC3(void) { //undocumented
     cpu.ticks = 8;
 
     indx();
     dcp();
 }
 
-OPCODE void op0xC4(void) {
+static void op0xC4(void) {
     cpu.ticks = 3;
 
     zp();
     cpyZP();
 }
 
-OPCODE void op0xC5(void) {
+static void op0xC5(void) {
     cpu.ticks = 3;
 
     zp();
     cmpZP();
 }
 
-OPCODE void op0xC6(void) {
+static void op0xC6(void) {
     cpu.ticks = 5;
 
     zp();
     decZP();
 }
 
-OPCODE void op0xC7(void) { //undocumented
+static void op0xC7(void) { //undocumented
     cpu.ticks = 5;
 
     zp();
     dcp();
 }
 
-OPCODE void op0xC8(void) {
+static void op0xC8(void) {
     cpu.ticks = 2;
 
     imp();
     iny();
 }
 
-OPCODE void op0xC9(void) {
+static void op0xC9(void) {
     cpu.ticks = 2;
 
     imm();
     cmp();
 }
 
-OPCODE void op0xCA(void) {
+static void op0xCA(void) {
     cpu.ticks = 2;
 
     imp();
     dex();
 }
 
-OPCODE void op0xCB(void) { //undocumented
+static void op0xCB(void) { //undocumented
     cpu.ticks = 2;
 
     imm();
     axs();
 }
 
-OPCODE void op0xCC(void) {
+static void op0xCC(void) {
     cpu.ticks = 4;
 
     abso();
     cpy();
 }
 
-OPCODE void op0xCD(void) {
+static void op0xCD(void) {
     cpu.ticks = 4;
 
     abso();
     cmp();
 }
 
-OPCODE void op0xCE(void) {
+static void op0xCE(void) {
     cpu.ticks = 6;
 
     abso();
     dec();
 }
 
-OPCODE void op0xCF(void) { //undocumented
+static void op0xCF(void) { //undocumented
     cpu.ticks = 6;
 
     abso();
     dcp();
 }
 
-OPCODE void op0xD0(void) {
+static void op0xD0(void) {
     cpu.ticks = 2;
 
     rel();
     bne();
 }
 
-OPCODE void op0xD1(void) {
+static void op0xD1(void) {
     cpu.ticks = 5;
 
     indy_t();
     cmp();
 }
 
-OPCODE void op0xD3(void) { //undocumented
+static void op0xD3(void) { //undocumented
     cpu.ticks = 8;
 
     indy();
     dcp();
 }
 
-OPCODE void op0xD4(void) { //nop
+static void op0xD4(void) { //nop
     cpu.ticks = 4;
 
     zpx();
 }
 
-OPCODE void op0xD5(void) {
+static void op0xD5(void) {
     cpu.ticks = 4;
 
     zpx();
     cmp();
 }
 
-OPCODE void op0xD6(void) {
+static void op0xD6(void) {
     cpu.ticks = 6;
 
     zpx();
     dec();
 }
 
-OPCODE void op0xD7(void) { //undocumented
+static void op0xD7(void) { //undocumented
     cpu.ticks = 6;
 
     zpx();
     dcp();
 }
 
-OPCODE void op0xD8(void) {
+static void op0xD8(void) {
     cpu.ticks = 2;
 
     imp();
     cld();
 }
 
-OPCODE void op0xD9(void) {
+static void op0xD9(void) {
     cpu.ticks = 4;
 
     absy_t();
     cmp();
 }
 
-OPCODE void op0xDA(void) { //nop
+static void op0xDA(void) { //nop
     cpu.ticks = 2;
 }
 
-OPCODE void op0xDB(void) { //undocumented
+static void op0xDB(void) { //undocumented
     cpu.ticks = 7;
 
     absy();
     dcp();
 }
 
-OPCODE void op0xDC(void) { //nop
+static void op0xDC(void) { //nop
     cpu.ticks = 4;
 
     absx_t();
 }
 
-OPCODE void op0xDD(void) {
+static void op0xDD(void) {
     cpu.ticks = 4;
 
     absx_t();
     cmp();
 }
 
-OPCODE void op0xDE(void) {
+static void op0xDE(void) {
     cpu.ticks = 7;
 
     absx();
     dec();
 }
 
-OPCODE void op0xDF(void) { //undocumented
+static void op0xDF(void) { //undocumented
     cpu.ticks = 7;
 
     absx();
     dcp();
 }
 
-OPCODE void op0xE0(void) {
+static void op0xE0(void) {
     cpu.ticks = 2;
 
     imm();
     cpx();
 }
 
-OPCODE void op0xE1(void) {
+static void op0xE1(void) {
     cpu.ticks = 5;
 
     indx();
     sbc();
 }
 
-OPCODE void op0xE2(void) { //NOP
+static void op0xE2(void) { //NOP
     cpu.ticks = 2;
 
     imm();
 }
 
-OPCODE void op0xE3(void) { //undocumented
+static void op0xE3(void) { //undocumented
     cpu.ticks = 8;
 
     indx();
     isb();
 }
 
-OPCODE void op0xE4(void) {
+static void op0xE4(void) {
     cpu.ticks = 3;
 
     zp();
     cpxZP();
 }
 
-OPCODE void op0xE5(void) {
+static void op0xE5(void) {
     cpu.ticks = 3;
 
     zp();
     sbcZP();
 }
 
-OPCODE void op0xE6(void) {
+static void op0xE6(void) {
     cpu.ticks = 5;
 
     zp();
     incZP();
 }
 
-OPCODE void op0xE7(void) { //undocumented
+static void op0xE7(void) { //undocumented
     cpu.ticks = 5;
 
     zp();
     isb();
 }
 
-OPCODE void op0xE8(void) {
+static void op0xE8(void) {
     cpu.ticks = 2;
 
     imp();
     inx();
 }
 
-OPCODE void op0xE9(void) {
+static void op0xE9(void) {
     cpu.ticks = 2;
 
     imm();
     sbc();
 }
 
-OPCODE void op0xEA(void) {
+static void op0xEA(void) {
     cpu.ticks = 2;
 }
 
-OPCODE void op0xEB(void) {
+static void op0xEB(void) {
     cpu.ticks = 2;
     imm();
     sbc();
 }
 
-OPCODE void op0xEC(void) {
+static void op0xEC(void) {
     cpu.ticks = 4;
     abso();
     cpx();
 }
 
-OPCODE void op0xED(void) {
+static void op0xED(void) {
     cpu.ticks = 4;
     abso();
     sbc();
 }
 
-OPCODE void op0xEE(void) {
+static void op0xEE(void) {
     cpu.ticks = 6;
     abso();
     inc();
 }
 
-OPCODE void op0xEF(void) { //undocumented
+static void op0xEF(void) { //undocumented
     cpu.ticks = 6;
     abso();
     isb();
 }
 
-OPCODE void op0xF0(void) {
+static void op0xF0(void) {
     cpu.ticks = 2;
     rel();
     beq();
 }
 
-OPCODE void op0xF1(void) {
+static void op0xF1(void) {
     cpu.ticks = 5;
     indy_t();
     sbc();
 }
 
-OPCODE void op0xF3(void) { //undocumented
+static void op0xF3(void) { //undocumented
     cpu.ticks = 8;
     indy();
     isb();
 }
 
-OPCODE void op0xF4(void) { //nop
+static void op0xF4(void) { //nop
     cpu.ticks = 4;
     zpx();
 }
 
-OPCODE void op0xF5(void) {
+static void op0xF5(void) {
     cpu.ticks = 4;
 
     zpx();
     sbc();
 }
 
-OPCODE void op0xF6(void) {
+static void op0xF6(void) {
     cpu.ticks = 6;
 
     zpx();
     inc();
 }
 
-OPCODE void op0xF7(void) { //undocumented
+static void op0xF7(void) { //undocumented
     cpu.ticks = 6;
 
     zpx();
     isb();
 }
 
-OPCODE void op0xF8(void) {
+static void op0xF8(void) {
     cpu.ticks = 2;
 
     imp();
     sed();
 }
 
-OPCODE void op0xF9(void) {
+static void op0xF9(void) {
     cpu.ticks = 4;
 
     absy_t();
     sbc();
 }
 
-OPCODE void op0xFA(void) { //nop
+static void op0xFA(void) { //nop
     cpu.ticks = 2;
 }
 
-OPCODE void op0xFB(void) { //undocumented
+static void op0xFB(void) { //undocumented
     cpu.ticks = 7;
 
     absy();
     isb();
 }
 
-OPCODE void op0xFC(void) { //nop
+static void op0xFC(void) { //nop
     cpu.ticks = 4;
 
     absx_t();
 }
 
-OPCODE void op0xFD(void) {
+static void op0xFD(void) {
     cpu.ticks = 4;
 
     absx_t();
     sbc();
 }
 
-OPCODE void op0xFE(void) {
+static void op0xFE(void) {
     cpu.ticks = 7;
 
     absx();
     inc();
 }
 
-OPCODE void op0xFF(void) { //undocumented
+static void op0xFF(void) { //undocumented
     cpu.ticks = 7;
 
     absx();
     isb();
 }
 
-OPCODE void opPATCHD2(void) {
+static void opPATCHD2(void) {
 #if APPLY_PATCHES
     patchLOAD();
 #else
@@ -2965,7 +2966,7 @@ OPCODE void opPATCHD2(void) {
 #endif
 }
 
-OPCODE void opPATCHF2(void) {
+static void opPATCHF2(void) {
 #if APPLY_PATCHES
     patchSAVE();
 #else
@@ -2973,9 +2974,9 @@ OPCODE void opPATCHF2(void) {
 #endif
 }
 
-typedef void (*op_ptr_t)(void);
+using op_ptr_t = void (*)(void);
 
-static const op_ptr_t opcodetable[256] = {
+static const op_ptr_t statictable[256] = {
         /*        	0   	1   	2   	3   	4   	5   	6   	7   	8	   9   		A   	B   	C   	D   	E   	F */
         /* 0  */    op0x0, op0x1, opKIL, op0x3, op0x4, op0x5, op0x6, op0x7, op0x8, op0x9, op0xA, op0xB, op0xC, op0xD,
                     op0xE, op0xF,
@@ -3011,7 +3012,7 @@ static const op_ptr_t opcodetable[256] = {
                     op0xFC, op0xFD, op0xFE, op0xFF
 };
 
-static const uint8_t cyclesTable[256] =
+__attribute__((unused)) static const uint8_t cyclesTable[256] =
         {
                 7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,  // $00
                 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7,  // $10
@@ -3031,7 +3032,7 @@ static const uint8_t cyclesTable[256] =
                 2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 5, 5, 7, 7   // $F0
         };
 
-static const uint8_t writeCycleTable[256] =
+__attribute__((unused)) static const uint8_t writeCycleTable[256] =
         {
                 3, 0, 0, 2, 0, 0, 2, 2, 1, 0, 0, 0, 0, 0, 2, 2, // $00
                 0, 0, 0, 2, 0, 0, 2, 2, 0, 0, 0, 2, 0, 0, 2, 2, // $10
@@ -3080,9 +3081,9 @@ static inline void cpu_irq() {
     cpu.ticks = 7;
 }
 
-inline void cia_clock(void)  __attribute__((always_inline));
+inline void cia_clock()  __attribute__((always_inline));
 
-void cia_clock(void) {
+void cia_clock() {
     cia1_clock(1);
     cia2_clock(1);
 }
@@ -3094,8 +3095,10 @@ void cia_clockt(int ticks) {
 
 void cpu_clock(int cycles) {
     static int c = 0;
+
     cpu.lineCyclesAbs += cycles;
     c += cycles;
+
     while(c > 0) {
         uint8_t opcode;
         cpu.ticks = 0;
@@ -3104,20 +3107,20 @@ void cpu_clock(int cycles) {
 
         if(!cpu.nmi && ((cpu.cia2.R[CIA_ICR] & CIA_ICR_IR) | cpu.nmiLine)) {
             cpu_nmi_do();
-            goto noOpcode;
+            goto nostatic;
         }
 
         if(!(cpu.cpustatus & FLAG_INTERRUPT)) {
             if(((cpu.vic.R[VIC_IRQST] | cpu.cia1.R[CIA_ICR]) & CIA_ICR_IR)) {
                 cpu_irq();
-                goto noOpcode;
+                goto nostatic;
             }
         }
 
         cpu.cpustatus |= FLAG_CONSTANT;
         opcode = read6502(cpu.pc++);
-        opcodetable[opcode]();
-        noOpcode:
+        statictable[opcode]();
+        nostatic:
 
         cia_clockt(cpu.ticks);
         c -= cpu.ticks;
@@ -3125,18 +3128,18 @@ void cpu_clock(int cycles) {
 
         if(cpu.exactTiming) {
             uint32_t t = cpu.lineCycles * MCU_C64_RATIO;
-            while(ARM_DWT_CYCCNT - cpu.lineStartTime < t) { ; }
+            while(ARM_DWT_CYCCNT - cpu.lineStartTime < t) {}
         }
-    };
+    }
 }
 
 //Enable "ExactTiming" Mode
 void cpu_setExactTiming() {
     if(!cpu.exactTiming) {
         //enable exact timing
-        LED_ON;
+        LED_ON();
         setAudioOff();
-        cpu.vic.displaySimpleModeScreen();
+        tvic::displaySimpleModeScreen();
     }
     cpu.exactTiming = 1;
     cpu.exactTimingStartTime = ARM_DWT_CYCCNT;
@@ -3146,7 +3149,7 @@ void cpu_setExactTiming() {
 void cpu_disableExactTiming() {
     cpu.exactTiming = 0;
     setAudioOn();
-    LED_OFF;
+    LED_OFF();
 }
 
 void cpu_reset() {

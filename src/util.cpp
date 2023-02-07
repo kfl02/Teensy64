@@ -43,11 +43,12 @@ void enableCycleCounter() {
 
 extern "C"
 
-void systick_isr();
-void unused_isr() {}
+void noOpIsr() {
+    // do nothing
+}
 
 void disableEventResponder() {
-    _VectorsRam[14] = unused_isr;  // pendablesrvreq
+    _VectorsRam[14] = noOpIsr;  // pendablesrvreq
     _VectorsRam[15] = systick_isr; // Short Systick
 }
 
@@ -58,7 +59,7 @@ float setAudioSampleFreq(float freq) {
         return 0.0f;
     }
 
-    unsigned int t = (float) F_BUS / freq - 0.5f;
+    auto t = (uint32_t) (F_BUS / freq - 0.5f);
 
     PDB0_SC = 0;
     PDB0_IDLY = 1;
@@ -67,7 +68,7 @@ float setAudioSampleFreq(float freq) {
     PDB0_SC = PDB_CONFIG | PDB_SC_SWTRIG;
     PDB0_CH0C1 = 0x0101;
 
-    return (float) F_BUS / t;
+    return F_BUS / (float)t;
 }
 
 void setAudioOff() {

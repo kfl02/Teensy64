@@ -40,7 +40,7 @@
 
 #include <Arduino.h>
 #include <IntervalTimer.h>
-#include "Teensy64.h"
+#include "teensy64.h"
 
 #define BORDER        20
 #define SCREEN_WIDTH   320
@@ -240,7 +240,7 @@ struct tvic {
     static void displaySimpleModeScreen(void);
     static void write(uint32_t address, uint8_t value);
     static uint8_t read(uint32_t address);
-    static void adrchange(void);
+    static void applyAdressChange(void);
     void reset(void);
     void updatePalette(int n);
     void nextPalette();

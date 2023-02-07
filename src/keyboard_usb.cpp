@@ -28,7 +28,8 @@
 
 extern "C" {
 void __keyboardmatrixEmptyFunction(void *keys) {
-} ;//FB
+//FB
+}
 }
 
 static void ((*keyboardmatrixFunc)(void *keys)) = __keyboardmatrixEmptyFunction;
@@ -107,7 +108,7 @@ void __c64USBKeyboardEmptyCallback() {
 
 void c64USBKeyboard::new_data(const Transfer_t *transfer) {
     //Serial.println("Keypress");
-    keyboardmatrixFunction((void *) transfer->buffer); //FB
+    keyboardmatrixFunction(transfer->buffer); //FB
 
     queue_Data_Transfer(datapipe, report, 8, this);
 

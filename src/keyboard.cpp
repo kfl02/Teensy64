@@ -33,7 +33,7 @@
 
 */
 
-#include "Teensy64.h"
+#include "teensy64.h"
 #include "keyboard.h"
 
 #include "keyboard_usb.h"
@@ -202,17 +202,17 @@ uint8_t cia1PORTA() {
     v = ~cpu.cia1.R[CIA_DDRA] | (cpu.cia1.R[CIA_PRA] & cpu.cia1.R[CIA_DDRA]);
 
     if(!cpu.swapJoysticks) {
-        if(gpioRead(PIN_JOY2_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
-        if(gpioRead(PIN_JOY2_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
-        if(gpioRead(PIN_JOY2_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
-        if(gpioRead(PIN_JOY2_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
-        if(gpioRead(PIN_JOY2_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
+        if(digitalRead(PIN_JOY2_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(digitalRead(PIN_JOY2_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(digitalRead(PIN_JOY2_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(digitalRead(PIN_JOY2_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(digitalRead(PIN_JOY2_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     } else {
-        if(gpioRead(PIN_JOY1_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
-        if(gpioRead(PIN_JOY1_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
-        if(gpioRead(PIN_JOY1_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
-        if(gpioRead(PIN_JOY1_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
-        if(gpioRead(PIN_JOY1_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
+        if(digitalRead(PIN_JOY1_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(digitalRead(PIN_JOY1_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(digitalRead(PIN_JOY1_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(digitalRead(PIN_JOY1_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(digitalRead(PIN_JOY1_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     }
 
     if(!kbdData.kv) { return v; } //Keine Taste gedrückt
@@ -248,17 +248,17 @@ uint8_t cia1PORTB() {
     v = ~cpu.cia1.R[0x03] | (cpu.cia1.R[0x00] & cpu.cia1.R[0x02]);
 
     if(!cpu.swapJoysticks) {
-        if(gpioRead(PIN_JOY1_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
-        if(gpioRead(PIN_JOY1_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
-        if(gpioRead(PIN_JOY1_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
-        if(gpioRead(PIN_JOY1_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
-        if(gpioRead(PIN_JOY1_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
+        if(digitalRead(PIN_JOY1_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(digitalRead(PIN_JOY1_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(digitalRead(PIN_JOY1_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(digitalRead(PIN_JOY1_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(digitalRead(PIN_JOY1_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     } else {
-        if(gpioRead(PIN_JOY2_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
-        if(gpioRead(PIN_JOY2_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
-        if(gpioRead(PIN_JOY2_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
-        if(gpioRead(PIN_JOY2_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
-        if(gpioRead(PIN_JOY2_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
+        if(digitalRead(PIN_JOY2_1) == 0) { v &= ~CIA1_PR_JOY_UP; }
+        if(digitalRead(PIN_JOY2_2) == 0) { v &= ~CIA1_PR_JOY_DOWN; }
+        if(digitalRead(PIN_JOY2_3) == 0) { v &= ~CIA1_PR_JOY_LEFT; }
+        if(digitalRead(PIN_JOY2_4) == 0) { v &= ~CIA1_PR_JOY_RIGHT; }
+        if(digitalRead(PIN_JOY2_BTN) == 0) { v &= ~CIA1_PR_JOY_BTN; }
     }
 
     if(!kbdData.kv) { return v; } //Keine Taste gedrückt

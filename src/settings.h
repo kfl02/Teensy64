@@ -38,9 +38,10 @@
 #ifndef TEENSY64_SETTINGS_H
 #define TEENSY64_SETTINGS_H
 
-//Note: PAL/NTSC are EMULATED - This is not the real videomode!
+// Note: PAL/NTSC are EMULATED - This is not the real videomode!
+// undefine PAL to use NTSC
 #ifndef PAL
-#define PAL           1 //use 0 for NTSC
+#define PAL           1
 #endif
 
 #ifndef FASTBOOT

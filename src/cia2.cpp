@@ -41,9 +41,8 @@
 #define tod()       (cpu.cia2.TODfrozen ? cpu.cia2.TODfrozenMillis : (int)( (millis() - cpu.cia2.TOD) % 86400000l) )
 
 void cia2_setAlarmTime() {
-    cpu.cia2.TODAlarm = (cpu.cia2.W[0x08] + cpu.cia2.W[0x09] * 10l + cpu.cia2.W[0x0A] * 600l +
-                         cpu.cia2.W[0x0B] * 36000l
-    );
+    cpu.cia2.TODAlarm = cpu.cia2.W[0x08] + cpu.cia2.W[0x09] * 10L + cpu.cia2.W[0x0A] * 600L +
+                        cpu.cia2.W[0x0B] * 36000L;
 }
 
 void cia2_write(uint32_t address, uint8_t value) {
@@ -52,14 +51,14 @@ void cia2_write(uint32_t address, uint8_t value) {
 
     switch(address) {
         case CIA_PRA:
-            if((~value & CIA2_PRA_IEC_OUT_MASK)) {
+            if(~value & CIA2_PRA_IEC_OUT_MASK) {
                 cpu_setExactTiming();
             }
 
             WRITE_ATN_CLK_DATA(value);
 
             cpu.vic.bank = ((~value) & CIA2_PRA_VIC_BANK_MASK) * 16384;
-            cpu.vic.adrchange();
+            tvic::applyAdressChange();
             cpu.cia2.R[CIA_PRA] = value;
             break;
 
@@ -101,9 +100,9 @@ void cia2_write(uint32_t address, uint8_t value) {
                 cpu.cia2.TODstopped = 0;
 
                 //Translate set Time to TOD:
-                cpu.cia2.TOD = (int) (millis() % 86400000l) -
-                               (value * 100 + cpu.cia2.R[CIA_TODSEC] * 1000l + cpu.cia2.R[CIA_TODMIN] * 60000l +
-                                cpu.cia2.R[CIA_TODHR] * 3600000l
+                cpu.cia2.TOD = (int) (millis() % 86400000L) -
+                               (value * 100 + cpu.cia2.R[CIA_TODSEC] * 1000L + cpu.cia2.R[CIA_TODMIN] * 60000L +
+                                cpu.cia2.R[CIA_TODHR] * 3600000L
                                );
             }
             break;
@@ -188,7 +187,7 @@ uint8_t cia2_read(uint32_t address) {
 
     switch(address) {
         case CIA_PRA:
-            ret = (cpu.cia2.R[CIA_PRA] & ~CIA2_PRA_IEC_IN_MASK) | READ_CLK_DATA();
+            ret = (cpu.cia2.R[CIA_PRA] & ~CIA2_PRA_IEC_IN_MASK) | (uint8_t)READ_CLK_DATA();
 
             if(~ret & ~CIA2_PRA_IEC_IN_MASK) {
                 cpu_setExactTiming();
@@ -297,14 +296,10 @@ underflow_b:
 
 #else
 
-void cia2_clock(int clk) {
-
-    int32_t t;
+void cia2_clock(uint16_t clk) {
+    uint16_t t;
     uint32_t regFEDC = cpu.cia2.R32[CIA_SDR / 4];
 
-    // TIMER A
-    //if (((cpu.cia2.R[0x0E] & 0x01)>0) && ((cpu.cia2.R[0x0E] & 0x20)==0)) {
-    //if ((regFEDC & 0x210000)==0x10000) {
     if(((regFEDC >> 16) & 0x21) == 0x1) {
 
         t = cpu.cia2.R16[CIA_TALO / 2];
@@ -312,7 +307,7 @@ void cia2_clock(int clk) {
         if(clk > t) { //underflow
             t = cpu.cia2.W16[CIA_TALO / 2] - (clk - t); //neu
             regFEDC |= 0x00000100;
-            if((regFEDC & 0x00080000)) { regFEDC &= 0xfffeffff; }
+            if(regFEDC & 0x00080000) { regFEDC &= 0xfffeffff; }
         } else {
             t -= clk;
         }
@@ -324,7 +319,6 @@ void cia2_clock(int clk) {
     // TIMER B
     //TODO: Prüfen ob das funktioniert
     if(regFEDC & 0x01000000) {
-        //uint16_t quelle = (cpu.cia2.R[0x0F]>>5) & 0x03;
         if((regFEDC & 0x60000000) == 0x40000000) {
 
             if(regFEDC & 0x00000100) { //unterlauf TimerA?
@@ -339,7 +333,7 @@ void cia2_clock(int clk) {
         if(clk > t) { //underflow
             t = cpu.cia2.W16[CIA_TBLO / 2] - (clk - t); //Neu
             regFEDC |= 0x00000200;
-            if((regFEDC & 0x08000000)) { regFEDC &= 0xfeffffff; }
+            if(regFEDC & 0x08000000) { regFEDC &= 0xfeffffff; }
         } else {
             t -= clk;
         }
@@ -360,7 +354,7 @@ void cia2_clock(int clk) {
 #endif
 
 void cia2_checkRTCAlarm() { // call every 1/10 sec minimum
-    if((uint32_t) (millis() - cpu.cia2.TOD) % 86400000l / 100 == cpu.cia2.TODAlarm) {
+    if((millis() - cpu.cia2.TOD) % 86400000L / 100 == cpu.cia2.TODAlarm) {
         cpu.cia2.R[CIA_ICR] |= CIA_ICR_ALRM | (cpu.cia2.W[CIA_ICR] & CIA_ICR_ALRM ? CIA_ICR_IR : 0);
     }
 }

@@ -33,7 +33,7 @@ Copyright Frank Bösing, 2017
     
 */
 
-#include <Teensy64.h>
+#include <teensy64.h>
 
 void setup() {
     AudioMemory(4);
@@ -41,5 +41,6 @@ void setup() {
 }
 
 void loop() {
+    // nothing to do here, everything run via interrupts
 }
 

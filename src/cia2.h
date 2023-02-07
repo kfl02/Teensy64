@@ -50,7 +50,7 @@
 #define CIA2_PRA_IEC_OUT_MASK   (CIA2_PRA_IEC_ATN_OUT | CIA2_PRA_IEC_CLK_OUT | CIA2_PRA_IEC_DATA_OUT)
 #define CIA2_PRA_IEC_IN_MASK    (CIA2_PRA_IEC_CLK_IN | CIA2_PRA_IEC_DATA_IN)
 
-void cia2_clock(int clk) __attribute__ ((hot));
+void cia2_clock(uint16_t clk) __attribute__ ((hot));
 void cia2_checkRTCAlarm() __attribute__ ((hot));
 void cia2_write(uint32_t address, uint8_t value) __attribute__ ((hot));
 uint8_t cia2_read(uint32_t address) __attribute__ ((hot));

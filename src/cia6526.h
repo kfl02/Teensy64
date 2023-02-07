@@ -200,7 +200,7 @@ protected:
     uint32_t tod() const;
 
 public:
-    void clock(int clk) __attribute__ ((hot));
+    void clock(uint16_t clk) __attribute__ ((hot));
     void checkRTCAlarm() __attribute__ ((hot));
     virtual void write(uint32_t address, uint8_t value) __attribute__ ((hot));
     virtual uint8_t read(uint32_t address) __attribute__ ((hot));

@@ -86,7 +86,7 @@ static const unsigned char Play_8_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_8_Bold = {
         Play_8_Bold_index,
-        0,
+        nullptr,
         Play_8_Bold_data,
         1,
         0,
@@ -201,7 +201,7 @@ static const unsigned char Play_9_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_9_Bold = {
         Play_9_Bold_index,
-        0,
+        nullptr,
         Play_9_Bold_data,
         1,
         0,
@@ -324,7 +324,7 @@ static const unsigned char Play_10_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_10_Bold = {
         Play_10_Bold_index,
-        0,
+        nullptr,
         Play_10_Bold_data,
         1,
         0,
@@ -454,7 +454,7 @@ static const unsigned char Play_11_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_11_Bold = {
         Play_11_Bold_index,
-        0,
+        nullptr,
         Play_11_Bold_data,
         1,
         0,
@@ -604,7 +604,7 @@ static const unsigned char Play_12_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_12_Bold = {
         Play_12_Bold_index,
-        0,
+        nullptr,
         Play_12_Bold_data,
         1,
         0,
@@ -762,7 +762,7 @@ static const unsigned char Play_13_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_13_Bold = {
         Play_13_Bold_index,
-        0,
+        nullptr,
         Play_13_Bold_data,
         1,
         0,
@@ -927,7 +927,7 @@ static const unsigned char Play_14_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_14_Bold = {
         Play_14_Bold_index,
-        0,
+        nullptr,
         Play_14_Bold_data,
         1,
         0,
@@ -1117,7 +1117,7 @@ static const unsigned char Play_16_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_16_Bold = {
         Play_16_Bold_index,
-        0,
+        nullptr,
         Play_16_Bold_data,
         1,
         0,
@@ -1334,7 +1334,7 @@ static const unsigned char Play_18_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_18_Bold = {
         Play_18_Bold_index,
-        0,
+        nullptr,
         Play_18_Bold_data,
         1,
         0,
@@ -1582,7 +1582,7 @@ static const unsigned char Play_20_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_20_Bold = {
         Play_20_Bold_index,
-        0,
+        nullptr,
         Play_20_Bold_data,
         1,
         0,
@@ -1890,7 +1890,7 @@ static const unsigned char Play_24_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_24_Bold = {
         Play_24_Bold_index,
-        0,
+        nullptr,
         Play_24_Bold_data,
         1,
         0,
@@ -2283,7 +2283,7 @@ static const unsigned char Play_28_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_28_Bold = {
         Play_28_Bold_index,
-        0,
+        nullptr,
         Play_28_Bold_data,
         1,
         0,
@@ -2759,7 +2759,7 @@ static const unsigned char Play_32_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_32_Bold = {
         Play_32_Bold_index,
-        0,
+        nullptr,
         Play_32_Bold_data,
         1,
         0,
@@ -3447,7 +3447,7 @@ static const unsigned char Play_40_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_40_Bold = {
         Play_40_Bold_index,
-        0,
+        nullptr,
         Play_40_Bold_data,
         1,
         0,
@@ -4402,7 +4402,7 @@ static const unsigned char Play_48_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_48_Bold = {
         Play_48_Bold_index,
-        0,
+        nullptr,
         Play_48_Bold_data,
         1,
         0,
@@ -5806,7 +5806,7 @@ static const unsigned char Play_60_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_60_Bold = {
         Play_60_Bold_index,
-        0,
+        nullptr,
         Play_60_Bold_data,
         1,
         0,
@@ -7761,7 +7761,7 @@ static const unsigned char Play_72_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_72_Bold = {
         Play_72_Bold_index,
-        0,
+        nullptr,
         Play_72_Bold_data,
         1,
         0,
@@ -11147,7 +11147,7 @@ static const unsigned char Play_96_Bold_index[] = {
 
 const ILI9341_t3_font_t Play_96_Bold = {
         Play_96_Bold_index,
-        0,
+        nullptr,
         Play_96_Bold_data,
         1,
         0,

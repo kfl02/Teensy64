@@ -38,13 +38,11 @@ Copyright Frank Bösing, 2017
 #ifndef TEENSY64_UTIL_H
 #define TEENSY64_UTIL_H
 
-inline void AudioNoInterrupts() __attribute__((always_inline));
-inline void AudioNoInterrupts() {
+inline void __attribute__((always_inline)) AudioNoInterrupts() {
     NVIC_DISABLE_IRQ(IRQ_SOFTWARE);
 }
 
-inline void AudioInterrupts() __attribute__((always_inline));
-inline void AudioInterrupts() {
+inline void __attribute__((always_inline)) AudioInterrupts() {
     NVIC_ENABLE_IRQ(IRQ_SOFTWARE);
 }
 
