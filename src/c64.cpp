@@ -1,5 +1,5 @@
 /*
-Copyright Frank Bösing, 2017  
+  Copyright Frank Bösing, Karsten Fleischer, 2017 - 2023
 
   This file is part of Teensy64.
 

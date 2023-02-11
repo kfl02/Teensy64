@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, 2017
+  Copyright Frank Bösing, Karsten Fleischer, 2017 - 2023
 
 	This file is part of Teensy64.
 
@@ -41,7 +41,7 @@
 #define tod()       (cpu.cia1.TODfrozen ? cpu.cia1.TODfrozenMillis : (int)( (millis() - cpu.cia1.TOD) % 86400000l) )
 
 void cia1_setAlarmTime() {
-    cpu.cia1.TODAlarm = cpu.cia1.W[CIA_TOD10THS] + cpu.cia1.W[CIA_TODSEC] * 10L + cpu.cia1.W[CIA_TODMIN] * 600L +
+    cpu.cia1.TODAlarm = cpu.cia1.W[CIA_TOD10TH] + cpu.cia1.W[CIA_TODSEC] * 10L + cpu.cia1.W[CIA_TODMIN] * 600L +
                         cpu.cia1.W[CIA_TODHR] * 36000L;
 }
 
@@ -73,14 +73,14 @@ void cia1_write(uint32_t address, uint8_t value) {
             }
             break;
 
-        case CIA_TOD10THS:
+        case CIA_TOD10TH:
             if((cpu.cia1.R[CIA_CRB] & CIA_CRB_ALARM) > 0) {
-                value &= CIA_TOD10THS_MASK;
-                cpu.cia1.W[CIA_TOD10THS] = value;
+                value &= CIA_TOD10TH_MASK;
+                cpu.cia1.W[CIA_TOD10TH] = value;
 
                 cia1_setAlarmTime();
             } else {
-                value &= CIA_TOD10THS_MASK;
+                value &= CIA_TOD10TH_MASK;
                 cpu.cia1.TODstopped = 0;
 
                 //Translate set Time to TOD:
@@ -175,7 +175,7 @@ uint8_t cia1_read(uint32_t address) {
             ret = cia1PORTB();
             break;
 
-        case CIA_TOD10THS:
+        case CIA_TOD10TH:
             ret = tod() % 1000 / 10;
             cpu.cia1.TODfrozen = 0;
             break;

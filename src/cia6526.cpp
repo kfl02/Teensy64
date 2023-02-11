@@ -38,11 +38,12 @@
 #include "cia6526.h"
 
 inline uint32_t CIA6526::tod() const {
-    return TODfrozen ? TODfrozenMillis : ( (millis() - TOD) % DAY_IN_MILLISECONDS);
+    return TODfrozen ? TODfrozenMillis : ((millis() - TOD) % DAY_IN_MILLISECONDS);
 }
 
 void CIA6526::setAlarmTime() {
-    TODalarm = w.tod10ths + w.todsec * 10L + w.todmin * 10L * 60L + w.todhr * 10L * 60L * 60L;
+    // time is saved as 24 hours in latch
+    TODalarm = latch.TOD10TH + latch.TODSEC * 10L + latch.TODMIN * 10L * 60L + latch.TODHR * 10L * 60L * 60L;
 }
 
 void CIA6526::write(uint32_t address, uint8_t value) {
@@ -50,109 +51,114 @@ void CIA6526::write(uint32_t address, uint8_t value) {
 
     switch(address) {
         case CIA_TALO:
-        case CIA_TBLO:
-            W[address] = value;
+            latch.TALO = value;
             break;
 
         case CIA_TAHI:
-            w.tahi = value;
+            latch.TAHI = value;
 
-            if((r.cra & CIA_CR_START) == 0) {
-                r.tahi = value;
+            if((r.CRA & CIA_CR_START) == 0) {
+                r.TAHI = value;
             }
+            break;
+
+        case CIA_TBLO:
+            latch.TBLO = value;
             break;
 
         case CIA_TBHI:
-            w.tbhi = value;
+            latch.TBHI = value;
 
-            if((r.crb & CIA_CR_START) == 0) {
-                r.tbhi = value;
+            if((r.CRB & CIA_CR_START) == 0) {
+                r.TBHI = value;
             }
             break;
 
-        case CIA_TOD10THS:
-            value &= CIA_TOD10THS_MASK;
+        case CIA_TOD10TH:
+            value &= CIA_TOD10TH_MASK;
 
-            if(r.crb & CIA_CRB_ALARM) {
-                w.tod10ths = value;
+            if(r.CRB & CIA_CRB_ALARM) {
+                latch.TOD10TH = value;
 
                 setAlarmTime();
             } else {
                 TODstopped = false;
                 TOD = (millis() % DAY_IN_MILLISECONDS) -
-                       (value * 100L + r.todsec * 10L * 100L +
-                       r.todmin * 10L * 100L * 60L +
-                       r.todhr * 10L * 100L * 60L * 60L);
+                       (value * 100L + r.TODSEC * 10L * 100L +
+                        r.TODMIN * 10L * 100L * 60L +
+                        r.TODHR * 10L * 100L * 60L * 60L);
             }
             break;
 
         case CIA_TODSEC:
             value &= CIA_TODSEC_MASK;
 
-            if(r.crb & CIA_CRB_ALARM) {
-                w.todsec = bcdToDec(value);
+            if(r.CRB & CIA_CRB_ALARM) {
+                latch.TODSEC = bcdToDec(value);
 
                 setAlarmTime();
             } else {
-                r.todsec = bcdToDec(value);
+                r.TODSEC = bcdToDec(value);
             }
             break;
 
         case CIA_TODMIN:
             value &= CIA_TODMIN_MASK;
 
-            if(r.crb & CIA_CRB_ALARM) {
-                w.todmin = bcdToDec(value);
+            if(r.CRB & CIA_CRB_ALARM) {
+                latch.TODMIN = bcdToDec(value);
 
                 setAlarmTime();
             } else {
-                r.todmin = bcdToDec(value);
+                r.TODMIN = bcdToDec(value);
             }
             break;
 
         case CIA_TODHR:
             value &= CIA_TODHR_MASK;
 
-            if(r.crb & CIA_CRB_ALARM) {
-                w.todhr = bcdToDec(value & CIA_TODHR_HR_MASK) + (value & CIA_TODHR_PM ? 12 : 0);
+            if(r.CRB & CIA_CRB_ALARM) {
+                // save in latch as 24 hours
+                latch.TODHR = bcdToDec(value & CIA_TODHR_HR_MASK) + (value & CIA_TODHR_PM ? 12 : 0);
 
                 setAlarmTime();
             } else {
-                r.todhr = bcdToDec(value & CIA_TODHR_HR_MASK) + (value & CIA_TODHR_PM ? 12 : 0);
-                TODstopped = true;
+                // save in latch as 24 hours
+                r.TODHR = bcdToDec(value & CIA_TODHR_HR_MASK) + (value & CIA_TODHR_PM ? 12 : 0);
+                TODstopped = true; // TODO: how does the real 6526 behave on read when the TOD is stopped?
             }
             break;
 
         case CIA_SDR:
-            r.sdr = value;
-            r.icr |= CIA_ICR_SP | (w.icr & CIA_ICR_SP ? CIA_ICR_IR : 0);
+            r.SDR = value;
+            r.ICR |= CIA_ICR_SP | (latch.ICR & CIA_ICR_SP ? CIA_ICR_IR : 0);
             break;
 
         case CIA_ICR:
             if(value & CIA_ICR_SET) {
-                w.icr |= value & CIA_ICR_IRQ_MASK;
+                latch.ICR |= value & CIA_ICR_IRQ_MASK;
 
-                if(r.icr & w.icr & CIA_ICR_IRQ_MASK) {
-                    r.icr |= CIA_ICR_IR;
+                if(r.ICR & latch.ICR & CIA_ICR_IRQ_MASK) {
+                    r.ICR |= CIA_ICR_IR;
                 }
             } else {
-                w.icr &= ~value;
+                latch.ICR &= ~value;
             }
             break;
 
         case CIA_CRA:
-            r.cra = value & ~CIA_CR_LOAD;
+            r.CRA = value & ~CIA_CR_LOAD;
 
             if(value & CIA_CR_LOAD) {
-                r.ta = w.ta;
+                r.TA = latch.TA;
             }
             break;
 
         case CIA_CRB:
-            r.crb = value & ~CIA_CR_LOAD;
+            r.CRB = value & ~CIA_CR_LOAD;
 
             if(value & CIA_CR_LOAD) {
-                r.tb = w.tb;
+                r.TB = latch.TB;
             }
             break;
 
@@ -168,7 +174,7 @@ uint8_t CIA6526::read(uint32_t address) {
     address &= 0x0f;
 
     switch(address) {
-        case CIA_TOD10THS:
+        case CIA_TOD10TH:
             ret = tod() % 1000 / 10;
             TODfrozen = true;
             break;
@@ -188,6 +194,9 @@ uint8_t CIA6526::read(uint32_t address) {
 
             ret = TODfrozenMillis / (1000 * 60 * 60) % 24;
 
+            // convert 24 hour time to AM/PM
+            // TODO: 6526 chip seems to have a bug with the PM flag.
+            // Investigate and modify code according to the bug. OTOH: who is ever going to use the TOD?
             if(ret >= 12) {
                 ret = CIA_TODHR_PM | decToBcd(ret - 12);
             } else {
@@ -196,8 +205,8 @@ uint8_t CIA6526::read(uint32_t address) {
             break;
 
         case CIA_ICR:
-            ret = r.icr & CIA_ICR_READ_MASK;
-            r.icr = 0;
+            ret = r.ICR & CIA_ICR_READ_MASK;
+            r.ICR = 0;
             break;
 
         default:
@@ -210,15 +219,15 @@ uint8_t CIA6526::read(uint32_t address) {
 
 void CIA6526::clock(uint16_t clk) {
     uint16_t t;
-    uint8_t icr = r.icr;
-    uint8_t cra = r.cra;
-    uint8_t crb = r.crb;
+    uint8_t icr = r.ICR;
+    uint8_t cra = r.CRA;
+    uint8_t crb = r.CRB;
 
     if((cra & (CIA_CRA_INMODE | CIA_CR_START)) == CIA_CR_START) {
-        t = r.ta;
+        t = r.TA;
 
         if(clk > t) { // underflow
-            t = w.ta - (clk - t);
+            t = latch.TA - (clk - t);
             icr |= CIA_ICR_TA;
 
             if((cra & CIA_CR_RUNMODE) == CIA_CR_RUNMODE_ONESHOT) {
@@ -228,7 +237,7 @@ void CIA6526::clock(uint16_t clk) {
             }
         }
 
-        r.ta = t;
+        r.TA = t;
     }
 
     if(crb & CIA_CR_START) {
@@ -240,10 +249,10 @@ void CIA6526::clock(uint16_t clk) {
             }
         }
 
-        t = r.tb;
+        t = r.TB;
 
         if(clk > t) {
-            t = w.tb - (clk -t);
+            t = latch.TB - (clk - t);
             icr |= CIA_ICR_TB;
         }
 
@@ -253,28 +262,28 @@ void CIA6526::clock(uint16_t clk) {
             t -= clk;
         }
 
-        r.tb = t;
+        r.TB = t;
     }
 
 skip:
 
-    if(icr & w.icr & CIA_ICR_IRQ_MASK) {
+    if(icr & latch.ICR & CIA_ICR_IRQ_MASK) {
         icr |= CIA_ICR_IR;
     }
 
-    r.icr = icr;
-    r.cra = cra;
-    r.crb = crb;
+    r.ICR = icr;
+    r.CRA = cra;
+    r.CRB = crb;
 }
 
 void CIA6526::checkRTCAlarm() {
     if((millis() - TOD) % DAY_IN_MILLISECONDS / 100 == TODalarm) {
-        R[CIA_ICR] |= CIA_ICR_ALRM | (W[CIA_ICR] & CIA_ICR_ALRM ? CIA_ICR_IR : 0);
+        r.ICR |= CIA_ICR_ALRM | (latch.ICR & CIA_ICR_ALRM ? CIA_ICR_IR : 0);
     }
 }
 
 void CIA6526::reset() {
     memset(R, 0, sizeof(R));
 
-    r.ta = r.tb = 0xffff;
+    r.TA = r.TB = 0xffff;
 }

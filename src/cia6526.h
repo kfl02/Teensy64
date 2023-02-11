@@ -1,5 +1,5 @@
 /*
-	Copyright Frank Bösing, Karsten Fleischer, 2017, 2023
+  Copyright Frank Bösing, Karsten Fleischer, 2017 - 2023
 
 	This file is part of Teensy64.
 
@@ -41,11 +41,11 @@
 #include <cstdint>
 
 static inline uint8_t decToBcd(uint8_t x) {
-    return ( ( (uint8_t) (x) / 10 * 16) | ((uint8_t) (x) % 10) );
+    return ((x / 10 * 16) | (x % 10));
 }
 
 static inline uint8_t bcdToDec(uint8_t x) {
-    return ( ( (uint8_t) (x) / 16 * 10) | ((uint8_t) (x) % 16) );
+    return ((x / 16 * 10) | (x % 16));
 }
 
 #define CIA_PRA         0x00
@@ -56,7 +56,7 @@ static inline uint8_t bcdToDec(uint8_t x) {
 #define CIA_TAHI        0x05
 #define CIA_TBLO        0x06
 #define CIA_TBHI        0x07
-#define CIA_TOD10THS    0x08
+#define CIA_TOD10TH     0x08
 #define CIA_TODSEC      0x09
 #define CIA_TODMIN      0x0a
 #define CIA_TODHR       0x0b
@@ -71,7 +71,7 @@ static inline uint8_t bcdToDec(uint8_t x) {
 #define CIA_PRB_TB  0x80
 
 // TOD
-#define CIA_TOD10THS_MASK   0x0f
+#define CIA_TOD10TH_MASK    0x0f
 #define CIA_TODSEC_MASK     0x7f
 #define CIA_TODMIN_MASK     0x7f
 #define CIA_TODHR_MASK      0x9f    // hours including PM flag
@@ -128,67 +128,176 @@ protected:
 
     union {
         uint8_t R[CIA_NUMREGS];
-        uint16_t R16[CIA_NUMREGS / 2];
-        uint32_t R32[CIA_NUMREGS / 4];
         struct {
-            uint8_t pra;
-            uint8_t prb;
-            uint8_t ddra;
-            uint8_t ddrb;
             union {
-                uint16_t ta;
+                uint8_t PRA;
                 struct {
-                    uint8_t talo;
-                    uint8_t tahi;
+                    uint8_t PA0 : 1;
+                    uint8_t PA1 : 1;
+                    uint8_t PA2 : 1;
+                    uint8_t PA3 : 1;
+                    uint8_t PA4 : 1;
+                    uint8_t PA5 : 1;
+                    uint8_t PA6 : 1;
+                    uint8_t PA7 : 1;
                 };
             };
             union {
-                uint16_t tb;
+                uint8_t PRB;
                 struct {
-                    uint8_t tblo;
-                    uint8_t tbhi;
+                    uint8_t PB0 : 1;
+                    uint8_t PB1 : 1;
+                    uint8_t PB2 : 1;
+                    uint8_t PB3 : 1;
+                    uint8_t PB4 : 1;
+                    uint8_t PB5 : 1;
+                    uint8_t PB6 : 1;
+                    uint8_t PB7 : 1;
                 };
             };
-            uint8_t tod10th;
-            uint8_t todsec;
-            uint8_t todmin;
-            uint8_t todhr;
-            uint8_t sdr;
-            uint8_t icr;
-            uint8_t cra;
-            uint8_t crb;
+            union {
+                uint8_t DDRA;
+                struct {
+                    uint8_t DPA0 : 1;
+                    uint8_t DPA1 : 1;
+                    uint8_t DPA2 : 1;
+                    uint8_t DPA3 : 1;
+                    uint8_t DPA4 : 1;
+                    uint8_t DPA5 : 1;
+                    uint8_t DPA6 : 1;
+                    uint8_t DPA7 : 1;
+                };
+            };
+            union {
+                uint8_t DDRB;
+                struct {
+                    uint8_t DPB0 : 1;
+                    uint8_t DPB1 : 1;
+                    uint8_t DPB2 : 1;
+                    uint8_t DPB3 : 1;
+                    uint8_t DPB4 : 1;
+                    uint8_t DPB5 : 1;
+                    uint8_t DPB6 : 1;
+                    uint8_t DPB7 : 1;
+                };
+            };
+            union {
+                uint16_t TA;
+                struct {
+                    uint8_t TALO;
+                    uint8_t TAHI;
+                };
+            };
+            union {
+                uint16_t TB;
+                struct {
+                    uint8_t TBLO;
+                    uint8_t TBHI;
+                };
+            };
+            struct {
+                uint8_t TOD10TH : 4;
+                uint8_t : 4;
+            };
+            struct {
+                uint8_t TODSEC : 7;
+                uint8_t : 1;
+            };
+            struct {
+                uint8_t TODMIN : 7;
+                uint8_t : 1;
+            };
+            uint8_t TODHR;
+            uint8_t SDR;
+            union {
+                uint8_t ICR;
+                union {
+                    struct {
+                        uint8_t TA : 1;
+                        uint8_t TB : 1;
+                        uint8_t ALRM : 1;
+                        uint8_t SP : 1;
+                        uint8_t FLG : 1;
+                        uint8_t : 2;
+                        uint8_t IR : 1;
+                    } ICRDATA;
+                };
+            };
+            union {
+                uint8_t CRA;
+                struct {
+                    uint8_t START : 1;
+                    uint8_t PBON : 1;
+                    uint8_t OUTMODE : 1;
+                    uint8_t RUNMODE : 1;
+                    uint8_t LOAD : 1;
+                    uint8_t INMODE : 1;
+                    uint8_t SPMODE : 1;
+                    uint8_t TODIN : 1;
+                } A;
+            };
+            union {
+                uint8_t CRB;
+                struct {
+                    uint8_t START : 1;
+                    uint8_t PBON : 1;
+                    uint8_t OUTMODE : 1;
+                    uint8_t RUNMODE : 1;
+                    uint8_t LOAD : 1;
+                    uint8_t INMODE : 2;
+                    uint8_t ALARM : 1;
+                } B;
+            };
         } r;
     };
     union {
-        uint8_t W[CIA_NUMREGS];
         struct {
-            uint8_t pra;
-            uint8_t prb;
-            uint8_t ddra;
-            uint8_t ddrb;
             union {
-                uint16_t ta;
+                uint16_t TA;
                 struct {
-                    uint8_t talo;
-                    uint8_t tahi;
+                    uint8_t TALO;
+                    uint8_t TAHI;
                 };
             };
             union {
-                uint16_t tb;
+                uint16_t TB;
                 struct {
-                    uint8_t tblo;
-                    uint8_t tbhi;
+                    uint8_t TBLO;
+                    uint8_t TBHI;
                 };
             };
-            uint8_t tod10ths;
-            uint8_t todsec;
-            uint8_t todmin;
-            uint8_t todhr;
-            uint8_t sdr;
-            uint8_t icr;
-            uint8_t cra;
-            uint8_t crb;
-        } w;
+            struct {
+                uint8_t TOD10TH : 4;
+                uint8_t : 4;
+            };
+            struct {
+                uint8_t TODSEC : 7;
+                uint8_t : 1;
+            };
+            struct {
+                uint8_t TODMIN : 7;
+                uint8_t : 1;
+            };
+            struct {
+                uint8_t TODHR : 5;
+                uint8_t : 2;
+                uint8_t TODPM : 1;
+            };
+            union {
+                uint8_t ICR;
+                union {
+                    struct {
+                        uint8_t TA : 1;
+                        uint8_t TB : 1;
+                        uint8_t ALRM : 1;
+                        uint8_t SP : 1;
+                        uint8_t FLG : 1;
+                        uint8_t : 2;
+                        uint8_t S_C : 1;
+                    } ICRMASK;
+                };
+            };
+        } latch;
     };
     uint32_t TOD;
     uint32_t TODfrozenMillis;
@@ -200,6 +309,9 @@ protected:
     uint32_t tod() const;
 
 public:
+    CIA6526() = default;
+    virtual ~CIA6526() = default;
+
     void clock(uint16_t clk) __attribute__ ((hot));
     void checkRTCAlarm() __attribute__ ((hot));
     virtual void write(uint32_t address, uint8_t value) __attribute__ ((hot));

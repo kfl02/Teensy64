@@ -1,5 +1,5 @@
 /*
-  Copyright Frank Bösing, 2017
+  Copyright Frank Bösing, Karsten Fleischer, 2017 - 2023
 
   This file is part of Teensy64.
 
@@ -89,14 +89,14 @@ void cia2_write(uint32_t address, uint8_t value) {
             }
             break;
 
-        case CIA_TOD10THS:
+        case CIA_TOD10TH:
             if((cpu.cia2.R[CIA_CRB] & CIA_CRB_ALARM) > 0) {
-                value &= CIA_TOD10THS_MASK;
-                cpu.cia2.W[CIA_TOD10THS] = value;
+                value &= CIA_TOD10TH_MASK;
+                cpu.cia2.W[CIA_TOD10TH] = value;
 
                 cia2_setAlarmTime();
             } else {
-                value &= CIA_TOD10THS_MASK;
+                value &= CIA_TOD10TH_MASK;
                 cpu.cia2.TODstopped = 0;
 
                 //Translate set Time to TOD:
@@ -140,8 +140,6 @@ void cia2_write(uint32_t address, uint8_t value) {
         case CIA_SDR:
             cpu.cia2.R[CIA_SDR] = value;
             cpu.cia2.R[CIA_ICR] |= CIA_ICR_SP | (cpu.cia2.W[CIA_ICR] & CIA_ICR_SP ? CIA_ICR_IR : 0);
-
-            cpu_nmi();
             break;
 
         case CIA_ICR:
@@ -150,7 +148,6 @@ void cia2_write(uint32_t address, uint8_t value) {
 
                 if(cpu.cia2.R[CIA_ICR] & cpu.cia2.W[CIA_ICR] & CIA_ICR_IRQ_MASK) {
                     cpu.cia2.R[CIA_ICR] |= CIA_ICR_IR;
-                    cpu_nmi();
                 }
             } else {
                 cpu.cia2.W[CIA_ICR] &= ~value;
@@ -194,7 +191,7 @@ uint8_t cia2_read(uint32_t address) {
             }
             break;
 
-        case CIA_TOD10THS:
+        case CIA_TOD10TH:
             ret = tod() % 1000 / 10;
             cpu.cia2.TODfrozen = 0;
             break;
@@ -224,7 +221,6 @@ uint8_t cia2_read(uint32_t address) {
         case CIA_ICR:
             ret = cpu.cia2.R[CIA_ICR] & CIA_ICR_READ_MASK;
             cpu.cia2.R[CIA_ICR] = 0;
-            cpu_clearNmi();
             break;
 
         default:
